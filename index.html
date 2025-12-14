@@ -58,6 +58,10 @@
                 <span class="btn-icon">🌠</span>
                 Start Observing
             </button>
+            <button id="view-past-sessions-btn" class="secondary-btn" style="margin-top: 20px;">
+                <span class="btn-icon">📊</span>
+                View Past Sessions
+            </button>
         </div>
 
         <!-- Observing Screen -->
@@ -90,6 +94,16 @@
             </div>
         </div>
 
+        <!-- Past Sessions Screen -->
+        <div id="past-sessions-screen" class="screen">
+            <h2 class="section-title">Past Observations</h2>
+            <div id="sessions-list" class="sessions-list"></div>
+            <button id="back-to-ready-btn" class="secondary-btn" style="margin-top: 20px;">
+                <span class="btn-icon">←</span>
+                Back
+            </button>
+        </div>
+
         <!-- Results Screen -->
         <div id="results-screen" class="screen">
             <h2 class="section-title">Observation Complete</h2>
@@ -111,6 +125,10 @@
             </div>
 
             <div class="action-buttons">
+                <button id="back-to-sessions-btn" class="secondary-btn" style="display: none;">
+                    <span class="btn-icon">←</span>
+                    Back to Sessions
+                </button>
                 <button id="export-btn" class="secondary-btn">
                     <span class="btn-icon">📥</span>
                     Export Data

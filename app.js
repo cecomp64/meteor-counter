@@ -7,6 +7,7 @@ class MeteorObserver {
         this.sessionTimer = null;
         this.location = null;
         this.observations = [];
+        this.viewingPastSession = false; // Track if viewing historical data
         
         // Touch tracking
         this.touchStart = null;
@@ -64,6 +65,15 @@ class MeteorObserver {
         document.getElementById('start-observing-btn').addEventListener('click', () => {
             this.startObserving();
         });
+        
+        document.getElementById('view-past-sessions-btn').addEventListener('click', () => {
+            this.showPastSessions();
+        });
+
+        // Past sessions screen
+        document.getElementById('back-to-ready-btn').addEventListener('click', () => {
+            this.showScreen('ready-screen');
+        });
 
         // Observing screen
         document.getElementById('stop-observing-btn').addEventListener('click', () => {
@@ -77,6 +87,10 @@ class MeteorObserver {
 
         document.getElementById('new-session-btn').addEventListener('click', () => {
             this.newSession();
+        });
+        
+        document.getElementById('back-to-sessions-btn').addEventListener('click', () => {
+            this.showPastSessions();
         });
     }
 
@@ -493,6 +507,9 @@ class MeteorObserver {
             
             console.log('Session updated, showing results');
             
+            // Mark as current session (not past)
+            this.viewingPastSession = false;
+            
             // Show results
             await this.showResults();
             
@@ -570,6 +587,11 @@ class MeteorObserver {
         
         console.log('Showing results screen');
         this.showScreen('results-screen');
+        
+        // Show/hide "Back to Sessions" button based on context
+        const backToSessionsBtn = document.getElementById('back-to-sessions-btn');
+        backToSessionsBtn.style.display = this.viewingPastSession ? 'flex' : 'none';
+        
         console.log('Results screen shown');
         } catch (error) {
             console.error('Error in showResults:', error);
@@ -771,11 +793,124 @@ class MeteorObserver {
         this.currentSession = null;
         this.sessionStartTime = null;
         this.observations = [];
+        this.viewingPastSession = false;
         
         // Clean up any leftover state
         this.cleanupObservingSession();
         
         this.showScreen('ready-screen');
+    }
+    
+    async showPastSessions() {
+        try {
+            console.log('Loading past sessions');
+            const sessions = await this.db.getAllSessions();
+            console.log('Found sessions:', sessions.length);
+            
+            // Sort by start time, most recent first
+            sessions.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+            
+            const sessionsList = document.getElementById('sessions-list');
+            
+            if (sessions.length === 0) {
+                sessionsList.innerHTML = `
+                    <div class="empty-sessions">
+                        <div class="empty-sessions-icon">🌌</div>
+                        <p style="font-size: 1.2rem; margin-bottom: 10px;">No observations yet</p>
+                        <p style="font-size: 0.9rem;">Start your first meteor observation session!</p>
+                    </div>
+                `;
+            } else {
+                sessionsList.innerHTML = sessions.map(session => {
+                    const startDate = new Date(session.startTime);
+                    const endDate = session.endTime ? new Date(session.endTime) : null;
+                    const duration = endDate ? (endDate - startDate) / 1000 / 60 : 0; // minutes
+                    const meteors = session.totalObservations || 0;
+                    const mph = duration > 0 ? (meteors / (duration / 60)).toFixed(1) : '0.0';
+                    
+                    return `
+                        <div class="session-card" data-session-id="${session.id}">
+                            <div class="session-date">${startDate.toLocaleDateString('en-US', { 
+                                weekday: 'short', 
+                                year: 'numeric', 
+                                month: 'short', 
+                                day: 'numeric' 
+                            })}</div>
+                            <div class="session-time">
+                                ${startDate.toLocaleTimeString('en-US', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                })}
+                                ${endDate ? ` - ${endDate.toLocaleTimeString('en-US', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                })}` : ''}
+                            </div>
+                            ${session.location ? `
+                                <div class="session-location">
+                                    📍 ${session.location.latitude.toFixed(2)}°, ${session.location.longitude.toFixed(2)}°
+                                </div>
+                            ` : ''}
+                            <div class="session-stats">
+                                <div class="session-stat">
+                                    <div class="session-stat-value">${meteors}</div>
+                                    <div class="session-stat-label">Meteors</div>
+                                </div>
+                                <div class="session-stat">
+                                    <div class="session-stat-value">${mph}</div>
+                                    <div class="session-stat-label">Per Hour</div>
+                                </div>
+                                <div class="session-stat">
+                                    <div class="session-stat-value">${Math.round(duration)}</div>
+                                    <div class="session-stat-label">Minutes</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Add click handlers to session cards
+                sessionsList.querySelectorAll('.session-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        const sessionId = parseInt(card.dataset.sessionId);
+                        this.loadSession(sessionId);
+                    });
+                });
+            }
+            
+            this.showScreen('past-sessions-screen');
+        } catch (error) {
+            console.error('Error loading past sessions:', error);
+            alert('Error loading past sessions: ' + error.message);
+        }
+    }
+    
+    async loadSession(sessionId) {
+        try {
+            console.log('Loading session:', sessionId);
+            
+            // Load session data
+            const session = await this.db.getSession(sessionId);
+            if (!session) {
+                alert('Session not found');
+                return;
+            }
+            
+            // Load observations for this session
+            this.observations = await this.db.getObservationsBySession(sessionId);
+            console.log('Loaded observations:', this.observations.length);
+            
+            // Set current session for display
+            this.currentSession = sessionId;
+            this.sessionStartTime = new Date(session.startTime);
+            this.viewingPastSession = true; // Mark as viewing historical data
+            
+            // Show results for this session
+            await this.showResults();
+        } catch (error) {
+            console.error('Error loading session:', error);
+            alert('Error loading session: ' + error.message);
+        }
     }
 
     showScreen(screenId) {
