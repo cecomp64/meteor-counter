@@ -4,6 +4,7 @@
   "description": "Meteor observation tracking PWA with remote sync",
   "scripts": {
     "dev": "netlify dev",
+    "serve": "npx http-server -p 3000 -a 0.0.0.0",
     "build": "echo 'No build step needed for static site'",
     "deploy": "netlify deploy --prod"
   },
@@ -11,6 +12,7 @@
     "@neondatabase/serverless": "^0.9.0"
   },
   "devDependencies": {
+    "http-server": "^14.1.1",
     "netlify-cli": "^17.0.0"
   }
 }
