@@ -1,11 +1,9 @@
 [build]
-  command = "npm run build"
   publish = "."
   functions = "netlify/functions"
 
 [dev]
-  command = ""
-  targetPort = 8888
+  autoLaunch = false
   port = 8888
   publish = "."
   functions = "netlify/functions"

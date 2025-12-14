@@ -7,7 +7,7 @@ RUN apk add --no-cache \
     postgresql-client
 
 # Set working directory
-WORKDIR /app
+WORKDIR /workspace
 
 # Copy package files
 COPY package*.json ./

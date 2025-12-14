@@ -29,9 +29,9 @@ services:
       - "9999:9999"  # Netlify Functions (if needed)
     volumes:
       # Mount source code for live reloading
-      - ./:/app
+      - ./:/workspace
       # Exclude node_modules from host (use container's version)
-      - /app/node_modules
+      - /workspace/node_modules
     environment:
       # Connect to postgres service
       - DATABASE_URL=postgresql://meteor:meteor_dev_password@postgres:5432/meteor_counter?sslmode=disable
