@@ -1,0 +1,16 @@
+{
+  "name": "meteor-counter",
+  "version": "1.0.202512141032",
+  "description": "Meteor observation tracking PWA with remote sync",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'No build step needed for static site'",
+    "deploy": "netlify deploy --prod"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  }
+}

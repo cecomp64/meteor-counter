@@ -1,6 +1,6 @@
 # Meteor Observer 🌠
 
-**Version 1.0.202512141015**
+**Version 1.0.202512141032**
 
 A Progressive Web App (PWA) for tracking meteor shower observations with precision timing, brightness analysis, and offline capability.
 
@@ -16,11 +16,13 @@ A Progressive Web App (PWA) for tracking meteor shower observations with precisi
 
 ### Data & Analysis
 - **IndexedDB storage**: All observations saved locally in the browser
+- **Remote database sync**: Optional cloud backup to Neon PostgreSQL (see [SYNC_SETUP.md](SYNC_SETUP.md))
 - **Session management**: Track multiple observation sessions
 - **Past sessions viewer**: Browse and review all your previous observations
 - **Interactive charts**: Timeline, brightness distribution, and duration analysis
 - **PDF Reports**: Download professional observation reports with charts and statistics
 - **Data export**: Download observations as JSON for further analysis
+- **Location privacy controls**: Choose how location data is shared (full, obfuscated, or hidden)
 
 ### Offline Capability
 - **Service Worker caching**: Works completely offline after first load
@@ -75,6 +77,8 @@ A Progressive Web App (PWA) for tracking meteor shower observations with precisi
 **Important:** For full functionality on iOS Safari (geolocation, service workers), the app **must be served over HTTPS**. All the hosting options below provide HTTPS automatically.
 
 This app can be hosted on any static hosting platform. Here are the most popular options:
+
+> **Note:** For remote database sync functionality, Netlify is required (or another platform supporting serverless functions). See [SYNC_SETUP.md](SYNC_SETUP.md) for details.
 
 ### Option 1: Netlify (Recommended)
 
@@ -137,13 +141,23 @@ vercel --prod
 
 ```
 meteor-observer/
-├── index.html          # Main HTML structure
-├── styles.css          # Cosmic-themed styling with animations
-├── app.js              # Core application logic
-├── db.js               # IndexedDB wrapper for data storage
-├── service-worker.js   # Offline caching and PWA functionality
-├── manifest.json       # PWA configuration
-└── README.md           # This file
+├── index.html              # Main HTML structure
+├── styles.css              # Cosmic-themed styling with animations
+├── app.js                  # Core application logic
+├── db.js                   # IndexedDB wrapper for data storage
+├── sync-service.js         # Remote sync service
+├── service-worker.js       # Offline caching and PWA functionality
+├── manifest.json           # PWA configuration
+├── schema.sql              # Remote database schema (PostgreSQL)
+├── netlify.toml            # Netlify configuration
+├── package.json            # Dependencies for backend functions
+├── netlify/functions/      # Serverless API endpoints
+│   ├── db-utils.js         # Database connection utilities
+│   ├── sync-session.js     # Session sync endpoint
+│   ├── get-sessions.js     # Retrieve sessions endpoint
+│   └── get-session-details.js  # Session details endpoint
+├── README.md               # This file
+└── SYNC_SETUP.md           # Remote sync setup guide
 ```
 
 ## Technical Details

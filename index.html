@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0e27">
     <title>Meteor Observer</title>
-    <link rel="manifest" href="manifest.json?v=1.0.202512141015">
-    <link rel="stylesheet" href="styles.css?v=1.0.202512141015">
+    <link rel="manifest" href="manifest.json?v=1.0.202512141032">
+    <link rel="stylesheet" href="styles.css?v=1.0.202512141032">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@
     <div class="stars3"></div>
     
     <!-- Version indicator - always visible -->
-    <div class="version-indicator">v1.0.202512141015</div>
+    <div class="version-indicator">v1.0.202512141032</div>
     
     <div id="app" class="container">
         <!-- Location Request Screen -->
@@ -52,6 +52,24 @@
         <div id="ready-screen" class="screen">
             <div class="status-badge">Ready</div>
             <div class="location-info" id="location-display"></div>
+
+            <!-- Sync Status Indicator -->
+            <div id="sync-status" class="sync-status" style="margin: 15px auto; padding: 10px; background: rgba(77, 168, 255, 0.1); border: 1px solid rgba(77, 168, 255, 0.3); border-radius: 8px; max-width: 400px; display: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8);">
+                            <i class="bi bi-cloud" id="sync-icon"></i>
+                            <span id="sync-status-text">Checking sync status...</span>
+                        </div>
+                        <div id="sync-details" style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 4px;"></div>
+                    </div>
+                    <button id="sync-now-btn" class="secondary-btn" style="margin: 0; padding: 8px 16px; font-size: 0.8rem; display: none;">
+                        <i class="bi bi-cloud-upload btn-icon"></i>
+                        Sync Now
+                    </button>
+                </div>
+            </div>
+
             <h2 class="section-title">Begin Observation</h2>
             <p class="instruction-text">
                 Press and hold anywhere on screen to record a meteor.<br>
@@ -65,6 +83,10 @@
             <button id="view-past-sessions-btn" class="secondary-btn" style="margin-top: 20px;">
                 <i class="bi bi-bar-chart-fill btn-icon"></i>
                 View Past Sessions
+            </button>
+            <button id="sync-settings-btn" class="secondary-btn" style="margin-top: 10px;">
+                <i class="bi bi-cloud-arrow-up btn-icon"></i>
+                Sync Settings
             </button>
         </div>
 
@@ -108,6 +130,67 @@
                 <i class="bi bi-arrow-left btn-icon"></i>
                 Back
             </button>
+        </div>
+
+        <!-- Sync Settings Screen -->
+        <div id="sync-settings-screen" class="screen">
+            <h2 class="section-title">Sync Settings</h2>
+
+            <div class="chart-card" style="margin-bottom: 20px; text-align: left;">
+                <h3><i class="bi bi-shield-lock"></i> Location Privacy</h3>
+                <p style="font-size: 0.9rem; color: rgba(255,255,255,0.6); margin-bottom: 15px;">
+                    Control how your location data is shared when syncing to the central database.
+                </p>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                        <input type="radio" name="location-privacy" value="full" checked style="margin-right: 8px;">
+                        <strong>Full Precision</strong><br>
+                        <span style="font-size: 0.85rem; color: rgba(255,255,255,0.5); margin-left: 24px;">
+                            Share exact GPS coordinates (best for scientific accuracy)
+                        </span>
+                    </label>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                        <input type="radio" name="location-privacy" value="obfuscated" style="margin-right: 8px;">
+                        <strong>Obfuscated</strong><br>
+                        <span style="font-size: 0.85rem; color: rgba(255,255,255,0.5); margin-left: 24px;">
+                            Reduce precision to ~1km (balances privacy and usefulness)
+                        </span>
+                    </label>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                        <input type="radio" name="location-privacy" value="hidden" style="margin-right: 8px;">
+                        <strong>Hidden</strong><br>
+                        <span style="font-size: 0.85rem; color: rgba(255,255,255,0.5); margin-left: 24px;">
+                            Do not share any location information
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="chart-card" style="margin-bottom: 20px; text-align: left;">
+                <h3><i class="bi bi-info-circle"></i> Sync Status</h3>
+                <div id="sync-settings-status" style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">
+                    <p>Device ID: <code id="device-id-display" style="font-family: 'Space Mono', monospace; font-size: 0.8rem; color: var(--nebula-blue);"></code></p>
+                    <p id="unsynced-count">Checking for unsynced data...</p>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="sync-all-btn" class="primary-btn">
+                    <i class="bi bi-cloud-upload btn-icon"></i>
+                    Sync All Data
+                </button>
+                <button id="back-to-ready-from-sync-btn" class="secondary-btn">
+                    <i class="bi bi-arrow-left btn-icon"></i>
+                    Back
+                </button>
+            </div>
         </div>
 
         <!-- Results Screen -->
@@ -167,7 +250,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="db.js?v=1.0.202512141015"></script>
-    <script src="app.js?v=1.0.202512141015"></script>
+    <script src="db.js?v=1.0.202512141032"></script>
+    <script src="sync-service.js?v=1.0.202512141032"></script>
+    <script src="app.js?v=1.0.202512141032"></script>
 </body>
 </html>
