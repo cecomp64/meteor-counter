@@ -22,7 +22,6 @@ body {
     font-family: 'Space Mono', monospace;
     background: var(--cosmic-deep);
     color: var(--star-white);
-    overflow: hidden;
     min-height: 100vh;
     position: relative;
     user-select: none;
@@ -410,10 +409,22 @@ body {
     height: 100vh;
     justify-content: flex-start;
     padding-top: 20px;
+    overflow: hidden;
 }
 
 #observing-screen.active .touch-area {
     flex: 1;
     max-height: none;
     margin-bottom: 20px;
+}
+
+/* Allow scrolling on results screen */
+#results-screen.active {
+    overflow-y: auto;
+    max-height: 100vh;
+}
+
+/* Prevent body scroll only during observing */
+body:has(#observing-screen.active) {
+    overflow: hidden;
 }
