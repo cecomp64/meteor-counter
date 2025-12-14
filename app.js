@@ -18,6 +18,24 @@ class MeteorObserver {
         this.canvas = null;
         this.ctx = null;
         
+        // Store charts for cleanup
+        this.charts = {
+            timeline: null,
+            brightness: null,
+            duration: null
+        };
+        
+        // Store bound handlers so we can remove them
+        this.boundHandlers = {
+            mouseDown: null,
+            mouseMove: null,
+            mouseUp: null,
+            mouseLeave: null,
+            touchStart: null,
+            touchMove: null,
+            touchEnd: null
+        };
+        
         this.init();
     }
 
@@ -91,8 +109,15 @@ class MeteorObserver {
     }
 
     async startObserving() {
+        // Clean up any previous session state
+        this.cleanupObservingSession();
+        
         this.sessionStartTime = new Date();
         this.observations = [];
+        this.isRecording = false;
+        this.touchStart = null;
+        this.touchStartPos = null;
+        this.touchMovement = 0;
         
         // Create session in database
         const session = {
@@ -132,27 +157,75 @@ class MeteorObserver {
     setupTouchArea() {
         const touchArea = document.getElementById('touch-area');
         
-        // Mouse events
-        touchArea.addEventListener('mousedown', (e) => this.handleTouchStart(e));
-        touchArea.addEventListener('mousemove', (e) => this.handleTouchMove(e));
-        touchArea.addEventListener('mouseup', (e) => this.handleTouchEnd(e));
-        touchArea.addEventListener('mouseleave', (e) => {
-            if (this.isRecording) this.handleTouchEnd(e);
-        });
+        // Remove any existing handlers first
+        this.removeTouchAreaHandlers();
         
-        // Touch events
-        touchArea.addEventListener('touchstart', (e) => {
+        // Create bound handlers
+        this.boundHandlers.mouseDown = (e) => this.handleTouchStart(e);
+        this.boundHandlers.mouseMove = (e) => this.handleTouchMove(e);
+        this.boundHandlers.mouseUp = (e) => this.handleTouchEnd(e);
+        this.boundHandlers.mouseLeave = (e) => {
+            if (this.isRecording) this.handleTouchEnd(e);
+        };
+        this.boundHandlers.touchStart = (e) => {
             e.preventDefault();
             this.handleTouchStart(e.touches[0]);
-        });
-        touchArea.addEventListener('touchmove', (e) => {
+        };
+        this.boundHandlers.touchMove = (e) => {
             e.preventDefault();
             this.handleTouchMove(e.touches[0]);
-        });
-        touchArea.addEventListener('touchend', (e) => {
+        };
+        this.boundHandlers.touchEnd = (e) => {
             e.preventDefault();
             this.handleTouchEnd(e.changedTouches[0]);
-        });
+        };
+        
+        // Add event listeners
+        touchArea.addEventListener('mousedown', this.boundHandlers.mouseDown);
+        touchArea.addEventListener('mousemove', this.boundHandlers.mouseMove);
+        touchArea.addEventListener('mouseup', this.boundHandlers.mouseUp);
+        touchArea.addEventListener('mouseleave', this.boundHandlers.mouseLeave);
+        touchArea.addEventListener('touchstart', this.boundHandlers.touchStart, { passive: false });
+        touchArea.addEventListener('touchmove', this.boundHandlers.touchMove, { passive: false });
+        touchArea.addEventListener('touchend', this.boundHandlers.touchEnd, { passive: false });
+    }
+    
+    removeTouchAreaHandlers() {
+        const touchArea = document.getElementById('touch-area');
+        if (!touchArea) return;
+        
+        // Remove all handlers if they exist
+        if (this.boundHandlers.mouseDown) {
+            touchArea.removeEventListener('mousedown', this.boundHandlers.mouseDown);
+            touchArea.removeEventListener('mousemove', this.boundHandlers.mouseMove);
+            touchArea.removeEventListener('mouseup', this.boundHandlers.mouseUp);
+            touchArea.removeEventListener('mouseleave', this.boundHandlers.mouseLeave);
+            touchArea.removeEventListener('touchstart', this.boundHandlers.touchStart);
+            touchArea.removeEventListener('touchmove', this.boundHandlers.touchMove);
+            touchArea.removeEventListener('touchend', this.boundHandlers.touchEnd);
+        }
+    }
+    
+    cleanupObservingSession() {
+        // Clear timer if running
+        if (this.sessionTimer) {
+            clearInterval(this.sessionTimer);
+            this.sessionTimer = null;
+        }
+        
+        // Remove touch area handlers
+        this.removeTouchAreaHandlers();
+        
+        // Clear canvas
+        if (this.ctx && this.canvas) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+        
+        // Reset recording state
+        this.isRecording = false;
+        this.touchStart = null;
+        this.touchStartPos = null;
+        this.touchMovement = 0;
     }
 
     handleTouchStart(e) {
@@ -312,7 +385,8 @@ class MeteorObserver {
     }
 
     async stopObserving() {
-        clearInterval(this.sessionTimer);
+        // Clean up the observing session
+        this.cleanupObservingSession();
         
         const endTime = new Date();
         const duration = endTime - this.sessionStartTime;
@@ -324,18 +398,28 @@ class MeteorObserver {
             totalObservations: this.observations.length
         });
         
-        this.showResults();
+        // Show results
+        await this.showResults();
     }
 
     async showResults() {
-        // Generate summary
+        // Get session data
         const session = await this.db.getSession(this.currentSession);
+        if (!session || !session.endTime) {
+            console.error('Invalid session data');
+            return;
+        }
+        
         const duration = new Date(session.endTime) - new Date(session.startTime);
         const hours = duration / 1000 / 60 / 60;
-        const mph = (this.observations.length / hours).toFixed(1);
+        const mph = this.observations.length > 0 ? (this.observations.length / hours).toFixed(1) : '0.0';
         
-        const avgDuration = this.observations.reduce((sum, obs) => sum + obs.duration, 0) / this.observations.length / 1000;
-        const avgIntensity = this.observations.reduce((sum, obs) => sum + obs.intensity, 0) / this.observations.length;
+        const avgDuration = this.observations.length > 0 
+            ? this.observations.reduce((sum, obs) => sum + obs.duration, 0) / this.observations.length / 1000
+            : 0;
+        const avgIntensity = this.observations.length > 0
+            ? this.observations.reduce((sum, obs) => sum + obs.intensity, 0) / this.observations.length
+            : 0;
         
         document.getElementById('results-summary').innerHTML = `
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-bottom: 20px;">
@@ -361,11 +445,28 @@ class MeteorObserver {
             </div>
         `;
         
-        this.createCharts();
+        // Only create charts if there are observations
+        if (this.observations.length > 0) {
+            this.createCharts();
+        } else {
+            // Show message if no observations
+            document.querySelector('.charts-container').innerHTML = `
+                <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">
+                    <p>No meteors recorded during this session.</p>
+                    <p style="margin-top: 10px; font-size: 0.9rem;">Try a longer observation period during peak meteor shower times!</p>
+                </div>
+            `;
+        }
+        
         this.showScreen('results-screen');
     }
 
     createCharts() {
+        // Destroy old charts if they exist
+        if (this.charts.timeline) this.charts.timeline.destroy();
+        if (this.charts.brightness) this.charts.brightness.destroy();
+        if (this.charts.duration) this.charts.duration.destroy();
+        
         // Timeline chart
         this.createTimelineChart();
         
@@ -389,7 +490,7 @@ class MeteorObserver {
             intervals[key] = (intervals[key] || 0) + 1;
         });
         
-        new Chart(ctx, {
+        this.charts.timeline = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: Object.keys(intervals),
@@ -434,7 +535,7 @@ class MeteorObserver {
             else bins['Very Bright (76-100)']++;
         });
         
-        new Chart(ctx, {
+        this.charts.brightness = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: Object.keys(bins),
@@ -478,7 +579,7 @@ class MeteorObserver {
             else bins['5s+']++;
         });
         
-        new Chart(ctx, {
+        this.charts.duration = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: Object.keys(bins),
@@ -520,6 +621,14 @@ class MeteorObserver {
     }
 
     newSession() {
+        // Reset state
+        this.currentSession = null;
+        this.sessionStartTime = null;
+        this.observations = [];
+        
+        // Clean up any leftover state
+        this.cleanupObservingSession();
+        
         this.showScreen('ready-screen');
     }
 
