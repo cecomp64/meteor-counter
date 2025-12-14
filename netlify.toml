@@ -3,8 +3,10 @@
   functions = "netlify/functions"
 
 [dev]
-  autoLaunch = false
+  command = "npm run serve"
+  targetPort = 3000
   port = 8888
+  autoLaunch = false
 
 [[redirects]]
   from = "/api/*"
