@@ -15,6 +15,7 @@ COPY package*.json ./
 
 # Install dependencies
 RUN npm install
+RUN npm install -g deno
 
 # Copy application files
 COPY . .
