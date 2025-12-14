@@ -438,15 +438,42 @@ body:has(#observing-screen.active) {
 }
 
 /* Past Sessions List */
-.sessions-list {
+.sessions-list-container {
     width: 100%;
     max-width: 600px;
+    max-height: calc(100vh - 250px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-bottom: 20px;
+    padding: 10px;
+    scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for sessions list */
+.sessions-list-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sessions-list-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.sessions-list-container::-webkit-scrollbar-thumb {
+    background: var(--nebula-blue);
+    border-radius: 4px;
+    opacity: 0.6;
+}
+
+.sessions-list-container::-webkit-scrollbar-thumb:hover {
+    background: var(--nebula-purple);
+}
+
+.sessions-list {
+    width: 100%;
     display: flex;
     flex-direction: column;
     gap: 15px;
-    margin-bottom: 20px;
-    max-height: 60vh;
-    padding: 10px;
 }
 
 .session-card {
