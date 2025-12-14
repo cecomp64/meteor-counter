@@ -1,6 +1,6 @@
 # Meteor Observer 🌠
 
-**Version 1.0.202512140725**
+**Version 1.0.202512132338**
 
 A Progressive Web App (PWA) for tracking meteor shower observations with precision timing, brightness analysis, and offline capability.
 
@@ -197,13 +197,30 @@ The app uses a Service Worker to cache all resources:
 
 ### Updating the Version Number
 
+**Quick Method (Unix/Mac/Linux):**
+Run the included script:
+```bash
+./update-version.sh
+```
+
+This automatically updates the version to `1.0.[current-timestamp]` in all necessary files.
+
+**Manual Method:**
 When making updates to the app, update the version in these files:
-1. `index.html` - Update the version indicator text
-2. `manifest.json` - Update the version field
-3. `service-worker.js` - Update CACHE_NAME
-4. `README.md` - Update the version at the top
+1. **index.html** - Update the version indicator text AND all query parameters (`?v=...`) on:
+   - `<link rel="manifest">`
+   - `<link rel="stylesheet">`
+   - `<script src="db.js">`
+   - `<script src="app.js">`
+2. **manifest.json** - Update the `version` field
+3. **service-worker.js** - Update:
+   - `CACHE_NAME` constant
+   - All URLs in `urlsToCache` array with new query parameters
+4. **README.md** - Update the version at the top
 
 Version format: `1.0.YYYYMMDDHHMM` (timestamp of build)
+
+**Why query parameters?** They force browsers to fetch fresh files instead of using cached versions when you deploy updates.
 
 ### Changing Colors
 Edit CSS variables in `styles.css`:
