@@ -4,4 +4,6 @@ node_modules/
 .netlify/
 dist/
 *.log
+*.log.*
 postgres_data/
+.DS_Store

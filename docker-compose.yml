@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # PostgreSQL database
   postgres:
     image: postgres:16-alpine
     container_name: meteor-counter-db
@@ -18,6 +19,36 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - meteor-net
+
+  # Node.js development environment
+  app:
+    build: .
+    container_name: meteor-counter-app
+    ports:
+      - "8888:8888"  # Netlify Dev server
+      - "9999:9999"  # Netlify Functions (if needed)
+    volumes:
+      # Mount source code for live reloading
+      - ./:/app
+      # Exclude node_modules from host (use container's version)
+      - /app/node_modules
+    environment:
+      # Connect to postgres service
+      - DATABASE_URL=postgresql://meteor:meteor_dev_password@postgres:5432/meteor_counter?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - meteor-net
+    # Keep container running in interactive mode
+    stdin_open: true
+    tty: true
+
+networks:
+  meteor-net:
+    driver: bridge
 
 volumes:
   postgres_data:
