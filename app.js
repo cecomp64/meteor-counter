@@ -18,6 +18,9 @@ class MeteorObserver {
         this.canvas = null;
         this.ctx = null;
         
+        // Audio context for sound (needs user gesture to initialize)
+        this.audioContext = null;
+        
         // Store bound handlers so we can remove them
         this.boundHandlers = {
             mouseDown: null,
@@ -105,6 +108,26 @@ class MeteorObserver {
         // Clean up any previous session state
         this.cleanupObservingSession();
         
+        // Initialize AudioContext on user gesture (required for mobile)
+        if (!this.audioContext) {
+            try {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                console.log('AudioContext created');
+            } catch (e) {
+                console.error('Failed to create AudioContext:', e);
+            }
+        }
+        
+        // Resume AudioContext if it's suspended (required on iOS)
+        if (this.audioContext && this.audioContext.state === 'suspended') {
+            try {
+                await this.audioContext.resume();
+                console.log('AudioContext resumed');
+            } catch (e) {
+                console.error('Failed to resume AudioContext:', e);
+            }
+        }
+        
         this.sessionStartTime = new Date();
         this.observations = [];
         this.isRecording = false;
@@ -137,6 +160,13 @@ class MeteorObserver {
         
         // Start timer
         this.startSessionTimer();
+        
+        // Test sound and vibration to confirm they work
+        setTimeout(() => {
+            console.log('Playing test sound and vibration');
+            this.playSound();
+            this.vibrate();
+        }, 300);
         
         this.showScreen('observing-screen');
     }
@@ -339,27 +369,49 @@ class MeteorObserver {
     }
 
     playSound() {
-        // Create a short "ping" sound
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
+        if (!this.audioContext) {
+            console.warn('AudioContext not initialized');
+            return;
+        }
         
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.value = 800;
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.2);
+        try {
+            // Resume context if needed (can be suspended on iOS)
+            if (this.audioContext.state === 'suspended') {
+                this.audioContext.resume();
+            }
+            
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            const now = this.audioContext.currentTime;
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            
+            oscillator.start(now);
+            oscillator.stop(now + 0.2);
+            
+            console.log('Sound played');
+        } catch (e) {
+            console.error('Error playing sound:', e);
+        }
     }
 
     vibrate() {
         if ('vibrate' in navigator) {
-            navigator.vibrate(50);
+            try {
+                const success = navigator.vibrate(50);
+                console.log('Vibrate called, success:', success);
+            } catch (e) {
+                console.error('Error vibrating:', e);
+            }
+        } else {
+            console.warn('Vibration API not supported');
         }
     }
 
