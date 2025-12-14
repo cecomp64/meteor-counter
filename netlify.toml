@@ -5,9 +5,10 @@
 
 [dev]
   command = ""
+  targetPort = 8888
+  port = 8888
   publish = "."
   functions = "netlify/functions"
-  port = 8888
 
 [[redirects]]
   from = "/api/*"
