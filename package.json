@@ -4,7 +4,7 @@
   "description": "Meteor observation tracking PWA with remote sync",
   "scripts": {
     "dev": "netlify dev",
-    "serve": "npx http-server -p 3000 -a 0.0.0.0",
+    "serve": "node server.js",
     "build": "echo 'No build step needed for static site'",
     "deploy": "netlify deploy --prod"
   },
