@@ -18,13 +18,6 @@ class MeteorObserver {
         this.canvas = null;
         this.ctx = null;
         
-        // Store charts for cleanup
-        this.charts = {
-            timeline: null,
-            brightness: null,
-            duration: null
-        };
-        
         // Store bound handlers so we can remove them
         this.boundHandlers = {
             mouseDown: null,
@@ -255,13 +248,21 @@ class MeteorObserver {
     }
 
     async handleTouchEnd(e) {
-        if (!this.isRecording) return;
+        console.log('handleTouchEnd called, isRecording:', this.isRecording);
+        
+        if (!this.isRecording) {
+            console.log('Not recording, ignoring');
+            return;
+        }
+        
+        // Immediately set to false to prevent re-entry
+        this.isRecording = false;
+        console.log('Recording stopped, processing observation');
         
         const duration = Date.now() - this.touchStart;
         
         // Only record if press was at least 100ms
         if (duration < 100) {
-            this.isRecording = false;
             this.clearCanvas();
             return;
         }
@@ -279,8 +280,10 @@ class MeteorObserver {
         };
         
         // Save to database
+        console.log('Saving observation:', observation);
         await this.db.saveObservation(observation);
         this.observations.push(observation);
+        console.log('Observation saved, total count:', this.observations.length);
         
         // Update UI
         this.updateStats();
@@ -291,8 +294,6 @@ class MeteorObserver {
         this.drawMeteorComplete();
         
         setTimeout(() => this.clearCanvas(), 500);
-        
-        this.isRecording = false;
     }
 
     drawMeteorStart(x, y) {
@@ -385,30 +386,50 @@ class MeteorObserver {
     }
 
     async stopObserving() {
-        // Clean up the observing session
-        this.cleanupObservingSession();
-        
-        const endTime = new Date();
-        const duration = endTime - this.sessionStartTime;
-        
-        // Update session in database
-        await this.db.updateSession(this.currentSession, {
-            endTime: endTime.toISOString(),
-            duration: duration,
-            totalObservations: this.observations.length
-        });
-        
-        // Show results
-        await this.showResults();
+        try {
+            console.log('Stop observing clicked');
+            
+            // Clean up the observing session
+            this.cleanupObservingSession();
+            
+            const endTime = new Date();
+            const duration = endTime - this.sessionStartTime;
+            
+            console.log('Updating session:', this.currentSession);
+            
+            // Update session in database
+            await this.db.updateSession(this.currentSession, {
+                endTime: endTime.toISOString(),
+                duration: duration,
+                totalObservations: this.observations.length
+            });
+            
+            console.log('Session updated, showing results');
+            
+            // Show results
+            await this.showResults();
+            
+            console.log('Results shown');
+        } catch (error) {
+            console.error('Error in stopObserving:', error);
+            alert('Error stopping session: ' + error.message);
+        }
     }
 
     async showResults() {
-        // Get session data
-        const session = await this.db.getSession(this.currentSession);
-        if (!session || !session.endTime) {
-            console.error('Invalid session data');
-            return;
-        }
+        try {
+            console.log('showResults called for session:', this.currentSession);
+            
+            // Get session data
+            const session = await this.db.getSession(this.currentSession);
+            console.log('Session retrieved:', session);
+            
+            if (!session || !session.endTime) {
+                console.error('Invalid session data:', session);
+                alert('Error loading session data. Please try again.');
+                this.showScreen('ready-screen');
+                return;
+            }
         
         const duration = new Date(session.endTime) - new Date(session.startTime);
         const hours = duration / 1000 / 60 / 60;
@@ -447,9 +468,11 @@ class MeteorObserver {
         
         // Only create charts if there are observations
         if (this.observations.length > 0) {
+            console.log('Creating charts for', this.observations.length, 'observations');
             this.createCharts();
         } else {
             // Show message if no observations
+            console.log('No observations, showing empty message');
             document.querySelector('.charts-container').innerHTML = `
                 <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">
                     <p>No meteors recorded during this session.</p>
@@ -458,14 +481,28 @@ class MeteorObserver {
             `;
         }
         
+        console.log('Showing results screen');
         this.showScreen('results-screen');
+        console.log('Results screen shown');
+        } catch (error) {
+            console.error('Error in showResults:', error);
+            alert('Error showing results: ' + error.message);
+            this.showScreen('ready-screen');
+        }
     }
 
     createCharts() {
-        // Destroy old charts if they exist
-        if (this.charts.timeline) this.charts.timeline.destroy();
-        if (this.charts.brightness) this.charts.brightness.destroy();
-        if (this.charts.duration) this.charts.duration.destroy();
+        // First ensure the charts container has the proper structure
+        this.ensureChartsStructure();
+        
+        // Destroy old charts using Chart.js registry
+        const existingTimeline = Chart.getChart('timeline-chart');
+        const existingBrightness = Chart.getChart('brightness-chart');
+        const existingDuration = Chart.getChart('duration-chart');
+        
+        if (existingTimeline) existingTimeline.destroy();
+        if (existingBrightness) existingBrightness.destroy();
+        if (existingDuration) existingDuration.destroy();
         
         // Timeline chart
         this.createTimelineChart();
@@ -475,6 +512,28 @@ class MeteorObserver {
         
         // Duration analysis chart
         this.createDurationChart();
+    }
+    
+    ensureChartsStructure() {
+        const chartsContainer = document.querySelector('.charts-container');
+        
+        // Check if we need to restore the structure (e.g., after showing "no observations" message)
+        if (!chartsContainer.querySelector('#timeline-chart')) {
+            chartsContainer.innerHTML = `
+                <div class="chart-card">
+                    <h3>Meteor Timeline</h3>
+                    <canvas id="timeline-chart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Brightness Distribution</h3>
+                    <canvas id="brightness-chart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Duration Analysis</h3>
+                    <canvas id="duration-chart"></canvas>
+                </div>
+            `;
+        }
     }
 
     createTimelineChart() {
@@ -490,7 +549,7 @@ class MeteorObserver {
             intervals[key] = (intervals[key] || 0) + 1;
         });
         
-        this.charts.timeline = new Chart(ctx, {
+        new Chart(ctx, {
             type: 'line',
             data: {
                 labels: Object.keys(intervals),
@@ -535,7 +594,7 @@ class MeteorObserver {
             else bins['Very Bright (76-100)']++;
         });
         
-        this.charts.brightness = new Chart(ctx, {
+        new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: Object.keys(bins),
@@ -579,7 +638,7 @@ class MeteorObserver {
             else bins['5s+']++;
         });
         
-        this.charts.duration = new Chart(ctx, {
+        new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: Object.keys(bins),
