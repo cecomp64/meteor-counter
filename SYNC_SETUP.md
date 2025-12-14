@@ -2,6 +2,8 @@
 
 This guide explains how to set up the remote database synchronization feature for Meteor Observer.
 
+> **For local development testing**, see [LOCAL_DEV_SETUP.md](LOCAL_DEV_SETUP.md)
+
 ## Overview
 
 The sync feature allows users to:

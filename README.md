@@ -157,7 +157,8 @@ meteor-observer/
 │   ├── get-sessions.js     # Retrieve sessions endpoint
 │   └── get-session-details.js  # Session details endpoint
 ├── README.md               # This file
-└── SYNC_SETUP.md           # Remote sync setup guide
+├── SYNC_SETUP.md           # Remote sync setup guide (production)
+└── LOCAL_DEV_SETUP.md      # Local development setup guide
 ```
 
 ## Technical Details
