@@ -1,10 +1,11 @@
-FROM node:20-alpine
+FROM node:20-slim
 
-# Install dependencies for better terminal experience
-RUN apk add --no-cache \
+# Install dependencies for better terminal experience and PostgreSQL client
+RUN apt-get update && apt-get install -y \
     bash \
     git \
-    postgresql-client
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /workspace
