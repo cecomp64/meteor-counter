@@ -4,7 +4,8 @@ FROM node:20-alpine
 RUN apk add --no-cache \
     bash \
     git \
-    postgresql-client
+    postgresql-client \
+    python3
 
 # Set working directory
 WORKDIR /app
@@ -20,8 +21,9 @@ COPY . .
 
 # Expose ports
 # 8888 - Netlify Dev server
+# 3000 - Static file server
 # 9999 - Netlify Dev functions (optional)
-EXPOSE 8888 9999
+EXPOSE 8888 3000 9999
 
 # Default command
-CMD ["npm", "run", "dev"]
+CMD ["sh", "-c", "./start-dev.sh"]
