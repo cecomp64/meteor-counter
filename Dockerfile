@@ -1,6 +1,6 @@
 FROM node:20-slim
 
-# Install dependencies for better terminal experience, PostgreSQL client, and Deno
+# Install dependencies for better terminal experience, PostgreSQL client, Deno, and socat
 RUN apt-get update && apt-get install -y \
     bash \
     git \
@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     unzip \
     ca-certificates \
+    socat \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Deno (required for Netlify Edge Functions)
