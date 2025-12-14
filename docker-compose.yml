@@ -35,6 +35,8 @@ services:
     environment:
       # Connect to postgres service
       - DATABASE_URL=postgresql://meteor:meteor_dev_password@postgres:5432/meteor_counter?sslmode=disable
+      # Make Netlify bind to all interfaces
+      - HOST=0.0.0.0
     depends_on:
       postgres:
         condition: service_healthy

@@ -5,9 +5,6 @@
 [dev]
   autoLaunch = false
   port = 8888
-  functions = "netlify/functions"
-  # Serve static files directly from publish directory
-  staticServerPort = 8888
 
 [[redirects]]
   from = "/api/*"
