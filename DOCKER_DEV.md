@@ -21,9 +21,10 @@ That's it! The app and database are now running in Docker containers.
   - Data persists in Docker volume
 
 - **Node.js App Container** (port 8888)
-  - Runs `npm run dev` (Netlify Dev server)
+  - Runs `npm run dev` (Netlify Dev server with http-server)
   - Live reloads when you edit files
   - Has npm, Node.js, and all dependencies
+  - Uses http-server on port 3000, proxied through Netlify on 8888
 
 ## 🛠️ Helper Commands
 
@@ -63,9 +64,9 @@ That's it! The app and database are now running in Docker containers.
 ### File Mounting
 Your local files are mounted into the container:
 ```
-./index.html    → /app/index.html
-./app.js        → /app/app.js
-./db.js         → /app/db.js
+./index.html    → /workspace/index.html
+./app.js        → /workspace/app.js
+./db.js         → /workspace/db.js
 ...etc
 ```
 
@@ -110,6 +111,13 @@ Both containers are on the same network, so they can talk to each other:
    ```
 
 ## 🔧 Troubleshooting
+
+### First Time Setup or After Package Changes
+If you just pulled the latest code or updated package.json:
+```bash
+# Rebuild containers with fresh dependencies
+./dev.sh rebuild
+```
 
 ### App won't start
 ```bash
