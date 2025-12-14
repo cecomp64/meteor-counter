@@ -107,7 +107,7 @@ class MeteorObserver {
 
         const btn = document.getElementById('request-location-btn');
         btn.disabled = true;
-        btn.innerHTML = '<span class="btn-icon">⏳</span> Getting Location...';
+        btn.innerHTML = '<i class="bi bi-hourglass-split btn-icon"></i> Getting Location...';
 
         try {
             const position = await new Promise((resolve, reject) => {
@@ -153,7 +153,7 @@ class MeteorObserver {
             this.showScreen('ready-screen');
         } finally {
             btn.disabled = false;
-            btn.innerHTML = '<span class="btn-icon">📍</span> Enable Location';
+            btn.innerHTML = '<i class="bi bi-geo-alt-fill btn-icon"></i> Enable Location';
         }
     }
 
@@ -877,7 +877,7 @@ class MeteorObserver {
             const btn = document.getElementById('download-report-btn');
             const originalText = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<span class="btn-icon">⏳</span> Generating...';
+            btn.innerHTML = '<i class="bi bi-hourglass-split btn-icon"></i> Generating...';
             
             console.log('Generating PDF report...');
             
@@ -1081,7 +1081,7 @@ class MeteorObserver {
             // Reset button
             const btn = document.getElementById('download-report-btn');
             btn.disabled = false;
-            btn.innerHTML = '<span class="btn-icon">📄</span> Download Report';
+            btn.innerHTML = '<i class="bi bi-file-earmark-text-fill btn-icon"></i> Download Report';
         }
     }
 
@@ -1112,7 +1112,7 @@ class MeteorObserver {
             if (sessions.length === 0) {
                 sessionsList.innerHTML = `
                     <div class="empty-sessions">
-                        <div class="empty-sessions-icon">🌌</div>
+                        <div class="empty-sessions-icon"><i class="bi bi-stars"></i></div>
                         <p style="font-size: 1.2rem; margin-bottom: 10px;">No observations yet</p>
                         <p style="font-size: 0.9rem;">Start your first meteor observation session!</p>
                     </div>
@@ -1145,7 +1145,7 @@ class MeteorObserver {
                             </div>
                             ${session.location ? `
                                 <div class="session-location">
-                                    📍 ${session.location.latitude.toFixed(2)}°, ${session.location.longitude.toFixed(2)}°
+                                    <i class="bi bi-geo-alt-fill"></i> ${session.location.latitude.toFixed(2)}°, ${session.location.longitude.toFixed(2)}°
                                 </div>
                             ` : ''}
                             <div class="session-stats">

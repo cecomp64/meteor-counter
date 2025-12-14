@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 <body>
     <div class="stars"></div>
@@ -38,7 +39,7 @@
             <h1 class="title">METEOR OBSERVER</h1>
             <p class="subtitle">Track celestial events with precision</p>
             <button id="request-location-btn" class="primary-btn">
-                <span class="btn-icon">📍</span>
+                <i class="bi bi-geo-alt-fill btn-icon"></i>
                 Enable Location
             </button>
             <button id="skip-location-btn" class="secondary-btn" style="margin-top: 15px;">
@@ -58,11 +59,11 @@
                 Movement = brightness
             </p>
             <button id="start-observing-btn" class="primary-btn large">
-                <span class="btn-icon">🌠</span>
+                <i class="bi bi-stars btn-icon"></i>
                 Start Observing
             </button>
             <button id="view-past-sessions-btn" class="secondary-btn" style="margin-top: 20px;">
-                <span class="btn-icon">📊</span>
+                <i class="bi bi-bar-chart-fill btn-icon"></i>
                 View Past Sessions
             </button>
         </div>
@@ -102,7 +103,7 @@
             <h2 class="section-title">Past Observations</h2>
             <div id="sessions-list" class="sessions-list"></div>
             <button id="back-to-ready-btn" class="secondary-btn" style="margin-top: 20px;">
-                <span class="btn-icon">←</span>
+                <i class="bi bi-arrow-left btn-icon"></i>
                 Back
             </button>
         </div>
@@ -129,19 +130,19 @@
 
             <div class="action-buttons">
                 <button id="back-to-sessions-btn" class="secondary-btn" style="display: none;">
-                    <span class="btn-icon">←</span>
+                    <i class="bi bi-arrow-left btn-icon"></i>
                     Back to Sessions
                 </button>
                 <button id="download-report-btn" class="secondary-btn">
-                    <span class="btn-icon">📄</span>
+                    <i class="bi bi-file-earmark-text-fill btn-icon"></i>
                     Download Report
                 </button>
                 <button id="export-btn" class="secondary-btn">
-                    <span class="btn-icon">📥</span>
+                    <i class="bi bi-download btn-icon"></i>
                     Export Data
                 </button>
                 <button id="new-session-btn" class="primary-btn">
-                    <span class="btn-icon">🔄</span>
+                    <i class="bi bi-arrow-clockwise btn-icon"></i>
                     New Session
                 </button>
             </div>
