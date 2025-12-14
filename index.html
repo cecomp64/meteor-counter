@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0e27">
+    <title>Meteor Observer</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="stars2"></div>
+    <div class="stars3"></div>
+    
+    <div id="app" class="container">
+        <!-- Location Request Screen -->
+        <div id="location-screen" class="screen active">
+            <div class="celestial-logo">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="3" fill="#fff" opacity="0.9"/>
+                    <line x1="50" y1="10" x2="50" y2="35" stroke="#fff" stroke-width="1" opacity="0.6"/>
+                    <line x1="50" y1="65" x2="50" y2="90" stroke="#fff" stroke-width="1" opacity="0.6"/>
+                    <line x1="10" y1="50" x2="35" y2="50" stroke="#fff" stroke-width="1" opacity="0.6"/>
+                    <line x1="65" y1="50" x2="90" y2="50" stroke="#fff" stroke-width="1" opacity="0.6"/>
+                    <line x1="20" y1="20" x2="38" y2="38" stroke="#fff" stroke-width="1" opacity="0.4"/>
+                    <line x1="62" y1="62" x2="80" y2="80" stroke="#fff" stroke-width="1" opacity="0.4"/>
+                    <line x1="80" y1="20" x2="62" y2="38" stroke="#fff" stroke-width="1" opacity="0.4"/>
+                    <line x1="38" y1="62" x2="20" y2="80" stroke="#fff" stroke-width="1" opacity="0.4"/>
+                </svg>
+            </div>
+            <h1 class="title">METEOR OBSERVER</h1>
+            <p class="subtitle">Track celestial events with precision</p>
+            <button id="request-location-btn" class="primary-btn">
+                <span class="btn-icon">📍</span>
+                Enable Location
+            </button>
+            <p class="info-text">Location helps calculate local meteor rates</p>
+        </div>
+
+        <!-- Ready Screen -->
+        <div id="ready-screen" class="screen">
+            <div class="status-badge">Ready</div>
+            <div class="location-info" id="location-display"></div>
+            <h2 class="section-title">Begin Observation</h2>
+            <p class="instruction-text">
+                Press and hold anywhere on screen to record a meteor.<br>
+                Duration = length of trail<br>
+                Movement = brightness
+            </p>
+            <button id="start-observing-btn" class="primary-btn large">
+                <span class="btn-icon">🌠</span>
+                Start Observing
+            </button>
+        </div>
+
+        <!-- Observing Screen -->
+        <div id="observing-screen" class="screen">
+            <div class="obs-header">
+                <div class="session-info">
+                    <div class="timer" id="session-timer">00:00:00</div>
+                    <div class="session-start" id="session-start-time"></div>
+                </div>
+                <button id="stop-observing-btn" class="stop-btn">Stop</button>
+            </div>
+            
+            <div class="stats-panel">
+                <div class="stat-card">
+                    <div class="stat-value" id="meteor-count">0</div>
+                    <div class="stat-label">Meteors</div>
+                </div>
+                <div class="stat-card accent">
+                    <div class="stat-value" id="meteors-per-hour">0.0</div>
+                    <div class="stat-label">Per Hour</div>
+                </div>
+            </div>
+
+            <div id="touch-area" class="touch-area">
+                <div class="touch-instructions">
+                    <span class="pulse-indicator"></span>
+                    Touch anywhere to record
+                </div>
+                <canvas id="visual-feedback"></canvas>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="screen">
+            <h2 class="section-title">Observation Complete</h2>
+            <div class="results-summary" id="results-summary"></div>
+            
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3>Meteor Timeline</h3>
+                    <canvas id="timeline-chart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Brightness Distribution</h3>
+                    <canvas id="brightness-chart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Duration Analysis</h3>
+                    <canvas id="duration-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="export-btn" class="secondary-btn">
+                    <span class="btn-icon">📥</span>
+                    Export Data
+                </button>
+                <button id="new-session-btn" class="primary-btn">
+                    <span class="btn-icon">🔄</span>
+                    New Session
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="db.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
