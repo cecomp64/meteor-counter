@@ -8,7 +8,9 @@ class MeteorObserver {
         this.location = null;
         this.observations = [];
         this.viewingPastSession = false; // Track if viewing historical data
-        
+        this.chartsReady = false; // Track if charts are fully rendered
+        this.chartsReadyCallbacks = []; // Callbacks waiting for charts to be ready
+
         // Touch tracking
         this.touchStart = null;
         this.touchStartPos = null;
@@ -607,24 +609,51 @@ class MeteorObserver {
     createCharts() {
         // First ensure the charts container has the proper structure
         this.ensureChartsStructure();
-        
+
         // Destroy old charts using Chart.js registry
         const existingTimeline = Chart.getChart('timeline-chart');
         const existingBrightness = Chart.getChart('brightness-chart');
         const existingDuration = Chart.getChart('duration-chart');
-        
+
         if (existingTimeline) existingTimeline.destroy();
         if (existingBrightness) existingBrightness.destroy();
         if (existingDuration) existingDuration.destroy();
-        
+
+        // Reset charts ready state
+        this.chartsReady = false;
+        const chartsCompleted = { timeline: false, brightness: false, duration: false };
+
+        const checkAllChartsReady = () => {
+            if (chartsCompleted.timeline && chartsCompleted.brightness && chartsCompleted.duration) {
+                // Use requestAnimationFrame to ensure browser has completed rendering
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        this.chartsReady = true;
+                        // Resolve any pending callbacks
+                        this.chartsReadyCallbacks.forEach(callback => callback());
+                        this.chartsReadyCallbacks = [];
+                    });
+                });
+            }
+        };
+
         // Timeline chart
-        this.createTimelineChart();
-        
+        this.createTimelineChart(() => {
+            chartsCompleted.timeline = true;
+            checkAllChartsReady();
+        });
+
         // Brightness distribution chart
-        this.createBrightnessChart();
-        
+        this.createBrightnessChart(() => {
+            chartsCompleted.brightness = true;
+            checkAllChartsReady();
+        });
+
         // Duration analysis chart
-        this.createDurationChart();
+        this.createDurationChart(() => {
+            chartsCompleted.duration = true;
+            checkAllChartsReady();
+        });
     }
     
     ensureChartsStructure() {
@@ -649,9 +678,9 @@ class MeteorObserver {
         }
     }
 
-    createTimelineChart() {
+    createTimelineChart(onComplete) {
         const ctx = document.getElementById('timeline-chart').getContext('2d');
-        
+
         // Group by 5-minute intervals
         const intervals = {};
         this.observations.forEach(obs => {
@@ -661,7 +690,7 @@ class MeteorObserver {
             const key = `${String(time.getHours()).padStart(2, '0')}:${String(interval).padStart(2, '0')}`;
             intervals[key] = (intervals[key] || 0) + 1;
         });
-        
+
         new Chart(ctx, {
             type: 'line',
             data: {
@@ -681,7 +710,8 @@ class MeteorObserver {
                 responsive: true,
                 maintainAspectRatio: true,
                 animation: {
-                    duration: 0 // Disable animation for faster rendering
+                    duration: 0, // Disable animation for faster rendering
+                    onComplete: onComplete // Callback when chart is fully rendered
                 },
                 plugins: {
                     legend: { 
@@ -726,9 +756,9 @@ class MeteorObserver {
         });
     }
 
-    createBrightnessChart() {
+    createBrightnessChart(onComplete) {
         const ctx = document.getElementById('brightness-chart').getContext('2d');
-        
+
         // Create bins for intensity
         const bins = { 'Faint (0-25)': 0, 'Dim (26-50)': 0, 'Bright (51-75)': 0, 'Very Bright (76-100)': 0 };
         this.observations.forEach(obs => {
@@ -737,7 +767,7 @@ class MeteorObserver {
             else if (obs.intensity <= 75) bins['Bright (51-75)']++;
             else bins['Very Bright (76-100)']++;
         });
-        
+
         new Chart(ctx, {
             type: 'bar',
             data: {
@@ -754,7 +784,8 @@ class MeteorObserver {
                 responsive: true,
                 maintainAspectRatio: true,
                 animation: {
-                    duration: 0 // Disable animation for faster rendering
+                    duration: 0, // Disable animation for faster rendering
+                    onComplete: onComplete // Callback when chart is fully rendered
                 },
                 plugins: {
                     legend: { 
@@ -799,9 +830,9 @@ class MeteorObserver {
         });
     }
 
-    createDurationChart() {
+    createDurationChart(onComplete) {
         const ctx = document.getElementById('duration-chart').getContext('2d');
-        
+
         // Create bins for duration (in seconds)
         const bins = { '0-1s': 0, '1-2s': 0, '2-3s': 0, '3-5s': 0, '5s+': 0 };
         this.observations.forEach(obs => {
@@ -812,7 +843,7 @@ class MeteorObserver {
             else if (seconds <= 5) bins['3-5s']++;
             else bins['5s+']++;
         });
-        
+
         new Chart(ctx, {
             type: 'doughnut',
             data: {
@@ -829,7 +860,8 @@ class MeteorObserver {
                 responsive: true,
                 maintainAspectRatio: true,
                 animation: {
-                    duration: 0 // Disable animation for faster rendering
+                    duration: 0, // Disable animation for faster rendering
+                    onComplete: onComplete // Callback when chart is fully rendered
                 },
                 plugins: {
                     legend: {
@@ -1010,47 +1042,47 @@ class MeteorObserver {
             
             // Only add charts if there are observations
             if (this.observations.length > 0) {
-                // Wait for charts to fully render
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-                // Capture charts as images
+                // Wait for charts to be fully rendered (using callbacks instead of fixed timeouts)
+                if (!this.chartsReady) {
+                    await new Promise(resolve => {
+                        this.chartsReadyCallbacks.push(resolve);
+                    });
+                }
+
+                // Capture charts as images - charts are already rendered, no need to update
                 const charts = [
                     { id: 'timeline-chart', title: 'Meteor Timeline' },
                     { id: 'brightness-chart', title: 'Brightness Distribution' },
                     { id: 'duration-chart', title: 'Duration Analysis' }
                 ];
-                
+
                 for (let i = 0; i < charts.length; i++) {
                     const chart = charts[i];
                     const chartInstance = Chart.getChart(chart.id);
-                    
+
                     if (chartInstance) {
-                        // Force chart to finish rendering
-                        chartInstance.update();
-                        await new Promise(resolve => setTimeout(resolve, 200));
-                        
                         // Add new page for each chart
                         pdf.addPage();
                         addStarryBackground();
                         yPos = 20;
-                        
+
                         // Chart title
                         pdf.setTextColor(77, 168, 255);
                         pdf.setFontSize(14);
                         pdf.setFont(undefined, 'bold');
                         pdf.text(chart.title, pageWidth / 2, yPos, { align: 'center' });
                         yPos += 10;
-                        
-                        // Get canvas and convert to image
+
+                        // Get canvas and convert to image (chart is already fully rendered)
                         const canvas = chartInstance.canvas;
                         const imgData = canvas.toDataURL('image/png', 1.0);
                         const imgWidth = pageWidth - 30;
                         const imgHeight = (canvas.height / canvas.width) * imgWidth;
-                        
+
                         // Add white background behind chart
                         pdf.setFillColor(255, 255, 255);
                         pdf.roundedRect(15, yPos, imgWidth, imgHeight, 3, 3, 'F');
-                        
+
                         // Add chart image
                         pdf.addImage(imgData, 'PNG', 15, yPos, imgWidth, imgHeight);
                         yPos += imgHeight;
