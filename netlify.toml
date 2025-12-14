@@ -5,7 +5,7 @@
 [dev]
   command = "node server.js"
   targetPort = 3000
-  port = 8888
+  port = 8889
   autoLaunch = false
 
 [[redirects]]
