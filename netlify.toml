@@ -3,7 +3,8 @@
   functions = "netlify/functions"
 
 [dev]
-  framework = "#static"
+  command = "node server.js"
+  targetPort = 3000
   port = 8888
   autoLaunch = false
 

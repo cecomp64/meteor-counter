@@ -37,6 +37,8 @@ services:
       - DATABASE_URL=postgresql://meteor:meteor_dev_password@postgres:5432/meteor_counter?sslmode=disable
       # Make Netlify bind to all interfaces
       - HOST=0.0.0.0
+      # Disable Edge Functions (we're only using regular Functions)
+      - NETLIFY_EXPERIMENTAL_BUILD_RUST_SOURCE=false
     depends_on:
       postgres:
         condition: service_healthy
