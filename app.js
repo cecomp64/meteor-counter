@@ -54,6 +54,11 @@ class MeteorObserver {
         document.getElementById('request-location-btn').addEventListener('click', () => {
             this.requestLocation();
         });
+        
+        document.getElementById('skip-location-btn').addEventListener('click', () => {
+            console.log('Location skipped');
+            this.showScreen('ready-screen');
+        });
 
         // Ready screen
         document.getElementById('start-observing-btn').addEventListener('click', () => {
@@ -82,9 +87,19 @@ class MeteorObserver {
             return;
         }
 
+        const btn = document.getElementById('request-location-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="btn-icon">⏳</span> Getting Location...';
+
         try {
             const position = await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject);
+                const options = {
+                    enableHighAccuracy: false, // Faster on mobile
+                    timeout: 10000, // 10 second timeout
+                    maximumAge: 300000 // Accept cached position up to 5 minutes old
+                };
+                
+                navigator.geolocation.getCurrentPosition(resolve, reject, options);
             });
 
             this.location = {
@@ -96,11 +111,31 @@ class MeteorObserver {
             document.getElementById('location-display').textContent = 
                 `Location: ${this.location.latitude.toFixed(4)}°, ${this.location.longitude.toFixed(4)}°`;
             
+            console.log('Location obtained:', this.location);
             this.showScreen('ready-screen');
+            
         } catch (error) {
             console.error('Location error:', error);
-            alert('Could not get location. You can still use the app.');
+            
+            let errorMessage = 'Could not get location. ';
+            
+            if (error.code === 1) { // PERMISSION_DENIED
+                errorMessage += 'Location permission denied. You can enable it in Settings > Safari > Location Services.';
+            } else if (error.code === 2) { // POSITION_UNAVAILABLE
+                errorMessage += 'Location information unavailable.';
+            } else if (error.code === 3) { // TIMEOUT
+                errorMessage += 'Location request timed out.';
+            } else {
+                errorMessage += error.message || 'Unknown error.';
+            }
+            
+            errorMessage += '\n\nYou can still use the app without location.';
+            
+            alert(errorMessage);
             this.showScreen('ready-screen');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="btn-icon">📍</span> Enable Location';
         }
     }
 

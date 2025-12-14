@@ -67,6 +67,8 @@ A Progressive Web App (PWA) for tracking meteor shower observations with precisi
 
 ## Deployment
 
+**Important:** For full functionality on iOS Safari (geolocation, service workers), the app **must be served over HTTPS**. All the hosting options below provide HTTPS automatically.
+
 This app can be hosted on any static hosting platform. Here are the most popular options:
 
 ### Option 1: Netlify (Recommended)
@@ -151,6 +153,22 @@ meteor-observer/
   - Web Audio API for sound feedback
   - Vibration API for haptic feedback (mobile)
   - Canvas API for visual effects
+
+### Important Notes for iOS Safari
+
+**Geolocation:**
+- Requires **HTTPS** in production (http:// won't work except on localhost)
+- Location permissions are in Settings > Safari > Location Services
+- You can skip location if permission is denied - the app works fine without it
+
+**Audio:**
+- The app automatically initializes audio on first interaction
+- Respects the hardware mute switch
+- Will play a test sound when you start observing
+
+**Haptic Feedback:**
+- Works on iPhone with iOS 13+
+- Requires permission in browser settings
 
 ### Data Storage
 All data is stored locally in the browser using IndexedDB:
