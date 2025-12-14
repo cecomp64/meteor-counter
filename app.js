@@ -651,7 +651,7 @@ class MeteorObserver {
 
     createTimelineChart() {
         const ctx = document.getElementById('timeline-chart').getContext('2d');
-        
+
         // Group by 5-minute intervals
         const intervals = {};
         this.observations.forEach(obs => {
@@ -661,7 +661,7 @@ class MeteorObserver {
             const key = `${String(time.getHours()).padStart(2, '0')}:${String(interval).padStart(2, '0')}`;
             intervals[key] = (intervals[key] || 0) + 1;
         });
-        
+
         new Chart(ctx, {
             type: 'line',
             data: {
@@ -684,9 +684,9 @@ class MeteorObserver {
                     duration: 0 // Disable animation for faster rendering
                 },
                 plugins: {
-                    legend: { 
+                    legend: {
                         display: true,
-                        labels: { 
+                        labels: {
                             color: '#fff',
                             font: { size: 12 }
                         }
@@ -698,37 +698,72 @@ class MeteorObserver {
                         font: { size: 14, weight: 'bold' }
                     }
                 },
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 10,
+                        top: 10,
+                        bottom: 10
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
                         title: {
                             display: true,
                             text: 'Number of Meteors',
-                            color: '#fff'
-                        },
-                        ticks: { 
                             color: '#fff',
-                            stepSize: 1
+                            font: { size: 12 }
                         },
-                        grid: { color: 'rgba(255,255,255,0.1)' }
+                        ticks: {
+                            color: '#fff',
+                            stepSize: 1,
+                            font: { size: 11 }
+                        },
+                        grid: {
+                            color: 'rgba(255,255,255,0.1)',
+                            drawBorder: true,
+                            borderColor: 'rgba(255,255,255,0.3)'
+                        }
                     },
                     x: {
                         title: {
                             display: true,
                             text: 'Time',
-                            color: '#fff'
+                            color: '#fff',
+                            font: { size: 12 }
                         },
-                        ticks: { color: '#fff' },
-                        grid: { color: 'rgba(255,255,255,0.1)' }
+                        ticks: {
+                            color: '#fff',
+                            font: { size: 10 },
+                            maxRotation: 45,
+                            minRotation: 0
+                        },
+                        grid: {
+                            color: 'rgba(255,255,255,0.1)',
+                            drawBorder: true,
+                            borderColor: 'rgba(255,255,255,0.3)'
+                        }
                     }
                 }
-            }
+            },
+            plugins: [{
+                id: 'customCanvasBackgroundColor',
+                beforeDraw: (chart) => {
+                    const ctx = chart.canvas.getContext('2d');
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'destination-over';
+                    ctx.fillStyle = 'rgba(10, 14, 39, 0.8)';
+                    ctx.fillRect(0, 0, chart.width, chart.height);
+                    ctx.restore();
+                }
+            }]
         });
     }
 
     createBrightnessChart() {
         const ctx = document.getElementById('brightness-chart').getContext('2d');
-        
+
         // Create bins for intensity
         const bins = { 'Faint (0-25)': 0, 'Dim (26-50)': 0, 'Bright (51-75)': 0, 'Very Bright (76-100)': 0 };
         this.observations.forEach(obs => {
@@ -737,7 +772,7 @@ class MeteorObserver {
             else if (obs.intensity <= 75) bins['Bright (51-75)']++;
             else bins['Very Bright (76-100)']++;
         });
-        
+
         new Chart(ctx, {
             type: 'bar',
             data: {
@@ -757,9 +792,9 @@ class MeteorObserver {
                     duration: 0 // Disable animation for faster rendering
                 },
                 plugins: {
-                    legend: { 
+                    legend: {
                         display: true,
-                        labels: { 
+                        labels: {
                             color: '#fff',
                             font: { size: 12 }
                         }
@@ -771,37 +806,72 @@ class MeteorObserver {
                         font: { size: 14, weight: 'bold' }
                     }
                 },
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 10,
+                        top: 10,
+                        bottom: 10
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
                         title: {
                             display: true,
                             text: 'Count',
-                            color: '#fff'
-                        },
-                        ticks: { 
                             color: '#fff',
-                            stepSize: 1
+                            font: { size: 12 }
                         },
-                        grid: { color: 'rgba(255,255,255,0.1)' }
+                        ticks: {
+                            color: '#fff',
+                            stepSize: 1,
+                            font: { size: 11 }
+                        },
+                        grid: {
+                            color: 'rgba(255,255,255,0.1)',
+                            drawBorder: true,
+                            borderColor: 'rgba(255,255,255,0.3)'
+                        }
                     },
                     x: {
                         title: {
                             display: true,
                             text: 'Brightness Category',
-                            color: '#fff'
+                            color: '#fff',
+                            font: { size: 12 }
                         },
-                        ticks: { color: '#fff' },
-                        grid: { display: false }
+                        ticks: {
+                            color: '#fff',
+                            font: { size: 10 },
+                            maxRotation: 45,
+                            minRotation: 0
+                        },
+                        grid: {
+                            display: false,
+                            drawBorder: true,
+                            borderColor: 'rgba(255,255,255,0.3)'
+                        }
                     }
                 }
-            }
+            },
+            plugins: [{
+                id: 'customCanvasBackgroundColor',
+                beforeDraw: (chart) => {
+                    const ctx = chart.canvas.getContext('2d');
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'destination-over';
+                    ctx.fillStyle = 'rgba(10, 14, 39, 0.8)';
+                    ctx.fillRect(0, 0, chart.width, chart.height);
+                    ctx.restore();
+                }
+            }]
         });
     }
 
     createDurationChart() {
         const ctx = document.getElementById('duration-chart').getContext('2d');
-        
+
         // Create bins for duration (in seconds)
         const bins = { '0-1s': 0, '1-2s': 0, '2-3s': 0, '3-5s': 0, '5s+': 0 };
         this.observations.forEach(obs => {
@@ -812,7 +882,7 @@ class MeteorObserver {
             else if (seconds <= 5) bins['3-5s']++;
             else bins['5s+']++;
         });
-        
+
         new Chart(ctx, {
             type: 'doughnut',
             data: {
@@ -831,10 +901,18 @@ class MeteorObserver {
                 animation: {
                     duration: 0 // Disable animation for faster rendering
                 },
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 10,
+                        top: 10,
+                        bottom: 10
+                    }
+                },
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: { 
+                        labels: {
                             color: '#fff',
                             font: { size: 12 },
                             padding: 15
@@ -848,7 +926,18 @@ class MeteorObserver {
                         padding: { bottom: 20 }
                     }
                 }
-            }
+            },
+            plugins: [{
+                id: 'customCanvasBackgroundColor',
+                beforeDraw: (chart) => {
+                    const ctx = chart.canvas.getContext('2d');
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'destination-over';
+                    ctx.fillStyle = 'rgba(10, 14, 39, 0.8)';
+                    ctx.fillRect(0, 0, chart.width, chart.height);
+                    ctx.restore();
+                }
+            }]
         });
     }
 
