@@ -680,6 +680,9 @@ class MeteorObserver {
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
+                animation: {
+                    duration: 0 // Disable animation for faster rendering
+                },
                 plugins: {
                     legend: { 
                         display: true,
@@ -750,6 +753,9 @@ class MeteorObserver {
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
+                animation: {
+                    duration: 0 // Disable animation for faster rendering
+                },
                 plugins: {
                     legend: { 
                         display: true,
@@ -822,6 +828,9 @@ class MeteorObserver {
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
+                animation: {
+                    duration: 0 // Disable animation for faster rendering
+                },
                 plugins: {
                     legend: {
                         position: 'bottom',
@@ -1001,6 +1010,9 @@ class MeteorObserver {
             
             // Only add charts if there are observations
             if (this.observations.length > 0) {
+                // Wait for charts to fully render
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
                 // Capture charts as images
                 const charts = [
                     { id: 'timeline-chart', title: 'Meteor Timeline' },
@@ -1010,9 +1022,13 @@ class MeteorObserver {
                 
                 for (let i = 0; i < charts.length; i++) {
                     const chart = charts[i];
-                    const canvas = document.getElementById(chart.id);
+                    const chartInstance = Chart.getChart(chart.id);
                     
-                    if (canvas) {
+                    if (chartInstance) {
+                        // Force chart to finish rendering
+                        chartInstance.update();
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                        
                         // Add new page for each chart
                         pdf.addPage();
                         addStarryBackground();
@@ -1025,7 +1041,8 @@ class MeteorObserver {
                         pdf.text(chart.title, pageWidth / 2, yPos, { align: 'center' });
                         yPos += 10;
                         
-                        // Add chart image with white background for visibility
+                        // Get canvas and convert to image
+                        const canvas = chartInstance.canvas;
                         const imgData = canvas.toDataURL('image/png', 1.0);
                         const imgWidth = pageWidth - 30;
                         const imgHeight = (canvas.height / canvas.width) * imgWidth;
