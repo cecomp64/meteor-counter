@@ -8,7 +8,7 @@ NEW_VERSION="1.0.$(date +%Y%m%d%H%M)"
 echo "Updating to version: $NEW_VERSION"
 
 # Define old version to replace (current version)
-OLD_VERSION="1.0.202512140002"
+OLD_VERSION="1.0.202512141722"
 
 # Function to update version in a file
 update_file() {
