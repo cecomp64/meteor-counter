@@ -3,11 +3,11 @@
   functions = "netlify/functions"
 
 [dev]
-  framework = "#static"
   autoLaunch = false
   port = 8888
-  targetPort = 3999
   functions = "netlify/functions"
+  # Serve static files directly from publish directory
+  staticServerPort = 8888
 
 [[redirects]]
   from = "/api/*"
