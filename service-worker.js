@@ -1,4 +1,4 @@
-const CACHE_NAME = 'meteor-observer-v1';
+const CACHE_NAME = 'meteor-observer-v1.0.202512140725';
 const urlsToCache = [
     './',
     './index.html',
