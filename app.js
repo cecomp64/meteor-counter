@@ -738,7 +738,8 @@ class MeteorObserver {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
+                aspectRatio: window.innerWidth <= 768 ? 1.2 : 2,
                 animation: {
                     duration: 0 // Disable animation for faster rendering
                 },
@@ -846,7 +847,8 @@ class MeteorObserver {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
+                aspectRatio: window.innerWidth <= 768 ? 1.2 : 2,
                 animation: {
                     duration: 0 // Disable animation for faster rendering
                 },
@@ -956,7 +958,8 @@ class MeteorObserver {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
+                aspectRatio: 1,
                 animation: {
                     duration: 0 // Disable animation for faster rendering
                 },

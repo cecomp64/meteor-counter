@@ -385,8 +385,8 @@ body {
 }
 
 .chart-card canvas {
-    min-height: 300px;
     width: 100%;
+    max-width: 100%;
 }
 
 .action-buttons {
@@ -409,10 +409,6 @@ body {
     .touch-area {
         height: 65vh;
         min-height: 350px;
-    }
-
-    .chart-card canvas {
-        min-height: 400px;
     }
 
     .chart-card {
