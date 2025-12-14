@@ -1,6 +1,6 @@
 # Meteor Observer 🌠
 
-**Version 1.0.202512132338**
+**Version 1.0.202512132354**
 
 A Progressive Web App (PWA) for tracking meteor shower observations with precision timing, brightness analysis, and offline capability.
 
@@ -19,6 +19,7 @@ A Progressive Web App (PWA) for tracking meteor shower observations with precisi
 - **Session management**: Track multiple observation sessions
 - **Past sessions viewer**: Browse and review all your previous observations
 - **Interactive charts**: Timeline, brightness distribution, and duration analysis
+- **PDF Reports**: Download professional observation reports with charts and statistics
 - **Data export**: Download observations as JSON for further analysis
 
 ### Offline Capability
@@ -53,6 +54,7 @@ A Progressive Web App (PWA) for tracking meteor shower observations with precisi
 5. **End Session**
    - Press "Stop" to end the observation
    - View comprehensive charts and statistics
+   - **Download Report** to get a professional PDF with all charts
    - Export data as JSON if needed
 
 ### Understanding the Measurements

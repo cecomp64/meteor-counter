@@ -81,6 +81,10 @@ class MeteorObserver {
         });
 
         // Results screen
+        document.getElementById('download-report-btn').addEventListener('click', () => {
+            this.downloadReport();
+        });
+        
         document.getElementById('export-btn').addEventListener('click', () => {
             this.exportData();
         });
@@ -663,26 +667,54 @@ class MeteorObserver {
             data: {
                 labels: Object.keys(intervals),
                 datasets: [{
-                    label: 'Meteors per 5 minutes',
+                    label: 'Meteors Observed',
                     data: Object.values(intervals),
                     borderColor: '#4da8ff',
                     backgroundColor: 'rgba(77, 168, 255, 0.1)',
                     fill: true,
-                    tension: 0.4
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#4da8ff'
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: true,
                 plugins: {
-                    legend: { display: false }
+                    legend: { 
+                        display: true,
+                        labels: { 
+                            color: '#fff',
+                            font: { size: 12 }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Meteors per 5-minute interval',
+                        color: '#4da8ff',
+                        font: { size: 14, weight: 'bold' }
+                    }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        ticks: { color: '#fff' },
+                        title: {
+                            display: true,
+                            text: 'Number of Meteors',
+                            color: '#fff'
+                        },
+                        ticks: { 
+                            color: '#fff',
+                            stepSize: 1
+                        },
                         grid: { color: 'rgba(255,255,255,0.1)' }
                     },
                     x: {
+                        title: {
+                            display: true,
+                            text: 'Time',
+                            color: '#fff'
+                        },
                         ticks: { color: '#fff' },
                         grid: { color: 'rgba(255,255,255,0.1)' }
                     }
@@ -708,23 +740,51 @@ class MeteorObserver {
             data: {
                 labels: Object.keys(bins),
                 datasets: [{
-                    label: 'Count',
+                    label: 'Number of Meteors',
                     data: Object.values(bins),
-                    backgroundColor: ['#4da8ff', '#9d7ff5', '#ff6ec7', '#ffd700']
+                    backgroundColor: ['#4da8ff', '#9d7ff5', '#ff6ec7', '#ffd700'],
+                    borderColor: ['#4da8ff', '#9d7ff5', '#ff6ec7', '#ffd700'],
+                    borderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: true,
                 plugins: {
-                    legend: { display: false }
+                    legend: { 
+                        display: true,
+                        labels: { 
+                            color: '#fff',
+                            font: { size: 12 }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Meteor Brightness Categories',
+                        color: '#9d7ff5',
+                        font: { size: 14, weight: 'bold' }
+                    }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        ticks: { color: '#fff' },
+                        title: {
+                            display: true,
+                            text: 'Count',
+                            color: '#fff'
+                        },
+                        ticks: { 
+                            color: '#fff',
+                            stepSize: 1
+                        },
                         grid: { color: 'rgba(255,255,255,0.1)' }
                     },
                     x: {
+                        title: {
+                            display: true,
+                            text: 'Brightness Category',
+                            color: '#fff'
+                        },
                         ticks: { color: '#fff' },
                         grid: { display: false }
                     }
@@ -752,16 +812,31 @@ class MeteorObserver {
             data: {
                 labels: Object.keys(bins),
                 datasets: [{
+                    label: 'Number of Meteors',
                     data: Object.values(bins),
-                    backgroundColor: ['#4da8ff', '#9d7ff5', '#ff6ec7', '#ffd700', '#00ff88']
+                    backgroundColor: ['#4da8ff', '#9d7ff5', '#ff6ec7', '#ffd700', '#00ff88'],
+                    borderColor: ['#4da8ff', '#9d7ff5', '#ff6ec7', '#ffd700', '#00ff88'],
+                    borderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: true,
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: { color: '#fff' }
+                        labels: { 
+                            color: '#fff',
+                            font: { size: 12 },
+                            padding: 15
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Meteor Duration Distribution',
+                        color: '#ffd700',
+                        font: { size: 14, weight: 'bold' },
+                        padding: { bottom: 20 }
                     }
                 }
             }
@@ -786,6 +861,211 @@ class MeteorObserver {
         a.download = `meteor-observations-${new Date().toISOString().split('T')[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
+    }
+    
+    async downloadReport() {
+        try {
+            const btn = document.getElementById('download-report-btn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="btn-icon">⏳</span> Generating...';
+            
+            console.log('Generating PDF report...');
+            
+            // Get session data
+            const session = await this.db.getSession(this.currentSession);
+            const startDate = new Date(session.startTime);
+            const endDate = session.endTime ? new Date(session.endTime) : new Date();
+            const duration = (endDate - startDate) / 1000 / 60 / 60; // hours
+            const mph = this.observations.length > 0 ? (this.observations.length / duration).toFixed(1) : '0.0';
+            
+            const avgDuration = this.observations.length > 0 
+                ? this.observations.reduce((sum, obs) => sum + obs.duration, 0) / this.observations.length / 1000
+                : 0;
+            const avgIntensity = this.observations.length > 0
+                ? this.observations.reduce((sum, obs) => sum + obs.intensity, 0) / this.observations.length
+                : 0;
+            
+            // Initialize jsPDF
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            
+            // Function to add starry background to current page
+            const addStarryBackground = () => {
+                // Black background
+                pdf.setFillColor(10, 14, 39);
+                pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+                
+                // Add stars
+                const starCount = 150;
+                for (let i = 0; i < starCount; i++) {
+                    const x = Math.random() * pageWidth;
+                    const y = Math.random() * pageHeight;
+                    const size = Math.random() * 0.5 + 0.1;
+                    const opacity = Math.random() * 0.7 + 0.3;
+                    
+                    pdf.setFillColor(255, 255, 255);
+                    pdf.setGState(new pdf.GState({ opacity: opacity }));
+                    pdf.circle(x, y, size, 'F');
+                }
+                pdf.setGState(new pdf.GState({ opacity: 1 })); // Reset opacity
+            };
+            
+            // First page - starry background
+            addStarryBackground();
+            
+            // Header with gradient effect
+            pdf.setFillColor(77, 168, 255, 0.2);
+            pdf.roundedRect(10, 10, pageWidth - 20, 35, 5, 5, 'F');
+            
+            pdf.setTextColor(255, 255, 255);
+            pdf.setFontSize(24);
+            pdf.setFont(undefined, 'bold');
+            pdf.text('METEOR OBSERVATION REPORT', pageWidth / 2, 25, { align: 'center' });
+            
+            pdf.setFontSize(12);
+            pdf.setFont(undefined, 'normal');
+            pdf.setTextColor(77, 168, 255);
+            pdf.text(startDate.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            }), pageWidth / 2, 35, { align: 'center' });
+            
+            // Session Info
+            pdf.setTextColor(220, 220, 220);
+            pdf.setFontSize(10);
+            let yPos = 55;
+            
+            pdf.setFont(undefined, 'bold');
+            pdf.setTextColor(77, 168, 255);
+            pdf.text('Session Details', 15, yPos);
+            yPos += 7;
+            
+            pdf.setFont(undefined, 'normal');
+            pdf.setTextColor(200, 200, 200);
+            pdf.text(`Time: ${startDate.toLocaleTimeString()} - ${endDate.toLocaleTimeString()}`, 15, yPos);
+            yPos += 5;
+            pdf.text(`Duration: ${Math.round(duration * 60)} minutes`, 15, yPos);
+            yPos += 5;
+            
+            if (session.location) {
+                pdf.text(`Location: ${session.location.latitude.toFixed(4)}°, ${session.location.longitude.toFixed(4)}°`, 15, yPos);
+                yPos += 5;
+            }
+            
+            yPos += 5;
+            
+            // Statistics boxes
+            const boxWidth = (pageWidth - 40) / 4;
+            const boxHeight = 25;
+            const boxY = yPos;
+            
+            // Draw stat boxes
+            const stats = [
+                { label: 'Total Meteors', value: this.observations.length, color: [77, 168, 255] },
+                { label: 'Per Hour', value: mph, color: [157, 127, 245] },
+                { label: 'Avg Duration', value: avgDuration.toFixed(1) + 's', color: [255, 215, 0] },
+                { label: 'Avg Intensity', value: avgIntensity.toFixed(0), color: [0, 255, 136] }
+            ];
+            
+            stats.forEach((stat, i) => {
+                const x = 15 + (i * (boxWidth + 2));
+                
+                // Box background
+                pdf.setFillColor(stat.color[0], stat.color[1], stat.color[2], 0.15);
+                pdf.roundedRect(x, boxY, boxWidth, boxHeight, 3, 3, 'F');
+                
+                // Border
+                pdf.setDrawColor(stat.color[0], stat.color[1], stat.color[2]);
+                pdf.setLineWidth(0.5);
+                pdf.roundedRect(x, boxY, boxWidth, boxHeight, 3, 3, 'S');
+                
+                // Value
+                pdf.setTextColor(stat.color[0], stat.color[1], stat.color[2]);
+                pdf.setFontSize(16);
+                pdf.setFont(undefined, 'bold');
+                pdf.text(String(stat.value), x + boxWidth / 2, boxY + 12, { align: 'center' });
+                
+                // Label
+                pdf.setTextColor(200, 200, 200);
+                pdf.setFontSize(8);
+                pdf.setFont(undefined, 'normal');
+                pdf.text(stat.label, x + boxWidth / 2, boxY + 19, { align: 'center' });
+            });
+            
+            yPos = boxY + boxHeight + 10;
+            
+            // Only add charts if there are observations
+            if (this.observations.length > 0) {
+                // Capture charts as images
+                const charts = [
+                    { id: 'timeline-chart', title: 'Meteor Timeline' },
+                    { id: 'brightness-chart', title: 'Brightness Distribution' },
+                    { id: 'duration-chart', title: 'Duration Analysis' }
+                ];
+                
+                for (let i = 0; i < charts.length; i++) {
+                    const chart = charts[i];
+                    const canvas = document.getElementById(chart.id);
+                    
+                    if (canvas) {
+                        // Add new page for each chart
+                        pdf.addPage();
+                        addStarryBackground();
+                        yPos = 20;
+                        
+                        // Chart title
+                        pdf.setTextColor(77, 168, 255);
+                        pdf.setFontSize(14);
+                        pdf.setFont(undefined, 'bold');
+                        pdf.text(chart.title, pageWidth / 2, yPos, { align: 'center' });
+                        yPos += 10;
+                        
+                        // Add chart image with white background for visibility
+                        const imgData = canvas.toDataURL('image/png', 1.0);
+                        const imgWidth = pageWidth - 30;
+                        const imgHeight = (canvas.height / canvas.width) * imgWidth;
+                        
+                        // Add white background behind chart
+                        pdf.setFillColor(255, 255, 255);
+                        pdf.roundedRect(15, yPos, imgWidth, imgHeight, 3, 3, 'F');
+                        
+                        // Add chart image
+                        pdf.addImage(imgData, 'PNG', 15, yPos, imgWidth, imgHeight);
+                        yPos += imgHeight;
+                    }
+                }
+            }
+            
+            // Footer on last page
+            pdf.setTextColor(100, 100, 100);
+            pdf.setFontSize(8);
+            pdf.text('Generated by Meteor Observer v1.0.202512140725', pageWidth / 2, pageHeight - 10, { align: 'center' });
+            pdf.text(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, pageHeight - 6, { align: 'center' });
+            
+            // Save PDF
+            const filename = `meteor-report-${startDate.toISOString().split('T')[0]}.pdf`;
+            pdf.save(filename);
+            
+            console.log('PDF report generated successfully');
+            
+            // Reset button
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            
+        } catch (error) {
+            console.error('Error generating report:', error);
+            alert('Error generating PDF report: ' + error.message);
+            
+            // Reset button
+            const btn = document.getElementById('download-report-btn');
+            btn.disabled = false;
+            btn.innerHTML = '<span class="btn-icon">📄</span> Download Report';
+        }
     }
 
     newSession() {

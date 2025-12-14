@@ -1,13 +1,15 @@
-const CACHE_NAME = 'meteor-observer-v1.0.202512132338';
+const CACHE_NAME = 'meteor-observer-v1.0.202512132354';
 const urlsToCache = [
     './',
-    './index.html?v=1.0.202512132338',
-    './styles.css?v=1.0.202512132338',
-    './app.js?v=1.0.202512132338',
-    './db.js?v=1.0.202512132338',
-    './manifest.json?v=1.0.202512132338',
+    './index.html?v=1.0.202512132354',
+    './styles.css?v=1.0.202512132354',
+    './app.js?v=1.0.202512132354',
+    './db.js?v=1.0.202512132354',
+    './manifest.json?v=1.0.202512132354',
     'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap',
-    'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
 ];
 
 // Install event - cache resources
