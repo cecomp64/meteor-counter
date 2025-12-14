@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0e27">
     <title>Meteor Observer</title>
-    <link rel="manifest" href="manifest.json?v=1.0.202512140954">
-    <link rel="stylesheet" href="styles.css?v=1.0.202512140954">
+    <link rel="manifest" href="manifest.json?v=1.0.202512141004">
+    <link rel="stylesheet" href="styles.css?v=1.0.202512141004">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@
     <div class="stars3"></div>
     
     <!-- Version indicator - always visible -->
-    <div class="version-indicator">v1.0.202512140954</div>
+    <div class="version-indicator">v1.0.202512141004</div>
     
     <div id="app" class="container">
         <!-- Location Request Screen -->
@@ -114,7 +114,22 @@
         <div id="results-screen" class="screen">
             <h2 class="section-title">Observation Complete</h2>
             <div class="results-summary" id="results-summary"></div>
-            
+
+            <div class="notes-section" style="margin: 20px 0;">
+                <label for="session-notes" style="display: block; margin-bottom: 8px; color: var(--nebula-blue); font-size: 0.95rem; font-weight: 600;">
+                    <i class="bi bi-journal-text"></i> Session Notes
+                </label>
+                <textarea
+                    id="session-notes"
+                    placeholder="Add notes about this observation session (weather conditions, location details, meteor shower name, etc.)"
+                    style="width: 100%; min-height: 80px; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(77, 168, 255, 0.3); border-radius: 8px; color: #fff; font-family: 'Space Mono', monospace; font-size: 0.9rem; resize: vertical;"
+                ></textarea>
+                <button id="save-notes-btn" class="secondary-btn" style="margin-top: 10px;">
+                    <i class="bi bi-save btn-icon"></i>
+                    Save Notes
+                </button>
+            </div>
+
             <div class="charts-container">
                 <div class="chart-card">
                     <h3>Meteor Timeline</h3>
@@ -154,7 +169,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="db.js?v=1.0.202512140954"></script>
-    <script src="app.js?v=1.0.202512140954"></script>
+    <script src="db.js?v=1.0.202512141004"></script>
+    <script src="app.js?v=1.0.202512141004"></script>
 </body>
 </html>
