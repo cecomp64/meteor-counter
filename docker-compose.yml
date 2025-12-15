@@ -25,7 +25,9 @@ services:
     build: .
     container_name: meteor-counter-app
     ports:
+      - "8889:8889"  # Netlify Dev server
       - "8888:8888"  # Netlify Dev server
+      - "3000:3000"  # Netlify Dev server
       - "9999:9999"  # Netlify Functions (if needed)
     volumes:
       # Mount source code for live reloading
