@@ -10,7 +10,8 @@
     "deploy": "netlify deploy --prod"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^0.9.0"
+    "@neondatabase/serverless": "^0.9.0",
+    "pg": "^8.11.3"
   },
   "devDependencies": {
     "http-server": "^14.1.1",

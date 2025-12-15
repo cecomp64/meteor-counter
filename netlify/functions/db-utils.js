@@ -1,16 +1,45 @@
-// Database utility functions for Neon connection
-const { neon } = require('@neondatabase/serverless');
+// Database utility functions - supports both Neon (production) and local PostgreSQL (development)
 
-let sql;
+let dbClient;
+let isNeon = false;
 
 function getDb() {
-    if (!sql) {
+    if (!dbClient) {
         if (!process.env.DATABASE_URL) {
             throw new Error('DATABASE_URL environment variable is not set');
         }
-        sql = neon(process.env.DATABASE_URL);
+
+        // Detect if using Neon based on connection string
+        const dbUrl = process.env.DATABASE_URL;
+        isNeon = dbUrl.includes('neon.tech') || dbUrl.includes('pooler.neon');
+
+        if (isNeon) {
+            // Use Neon serverless driver for production
+            const { neon } = require('@neondatabase/serverless');
+            dbClient = neon(dbUrl);
+        } else {
+            // Use standard PostgreSQL driver for local development
+            const { Pool } = require('pg');
+            const pool = new Pool({
+                connectionString: dbUrl,
+                ssl: false // Local Docker doesn't need SSL
+            });
+
+            // Return a query helper that mimics the Neon interface
+            dbClient = async (strings, ...values) => {
+                const query = strings.reduce((acc, str, i) => {
+                    return acc + str + (i < values.length ? `$${i + 1}` : '');
+                }, '');
+
+                const result = await pool.query(query, values);
+                return result.rows;
+            };
+        }
+
+        console.log(`Database initialized: ${isNeon ? 'Neon serverless' : 'PostgreSQL'}`);
     }
-    return sql;
+
+    return dbClient;
 }
 
 // Apply location privacy settings
