@@ -228,7 +228,10 @@ class MeteorObserver {
         };
         
         this.currentSession = await this.db.saveSession(session);
-        
+
+        // Update sync status since we created new data
+        await this.updateSyncStatus();
+
         // Update UI
         document.getElementById('session-start-time').textContent = 
             `Started ${this.sessionStartTime.toLocaleTimeString()}`;
@@ -398,7 +401,10 @@ class MeteorObserver {
         await this.db.saveObservation(observation);
         this.observations.push(observation);
         console.log('Observation saved, total count:', this.observations.length);
-        
+
+        // Update sync status since we created new data
+        await this.updateSyncStatus();
+
         // Update UI
         this.updateStats();
         
@@ -1405,6 +1411,9 @@ class MeteorObserver {
 
             // Update session with notes
             await this.db.updateSession(this.currentSession, { notes: notes });
+
+            // Update sync status since we modified data
+            await this.updateSyncStatus();
 
             // Show feedback
             const btn = document.getElementById('save-notes-btn');
