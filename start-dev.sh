@@ -1,6 +1,9 @@
 #!/bin/bash
 # Start script for development
 
+# Install pg package if not present (workaround for npm proxy issues)
+./install-pg.sh || exit 1
+
 # Start Node.js proxy to forward 0.0.0.0:8888 -> 127.0.0.1:8889
 echo "Starting port forwarder (Node.js proxy)..."
 node proxy.js &
