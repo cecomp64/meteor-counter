@@ -9,28 +9,18 @@ class SyncService {
 
     // Detect the correct API base URL based on environment
     detectApiBase() {
-        // Check if we're running through Netlify Dev (port 8889 or 8888)
+        // Use relative path for all environments
+        // In development:
+        //   - Port 3000: server.js proxies to Netlify Dev (8889)
+        //   - Port 8888: proxy.js forwards to Netlify Dev (8889)
+        //   - Port 8889: Netlify Dev directly
+        // In production:
+        //   - Netlify handles the routing automatically
+
         const currentPort = window.location.port;
-        const currentHost = window.location.hostname;
+        console.log(`Detected port ${currentPort || 'default'}, using /.netlify/functions`);
+        console.log('API endpoint: /.netlify/functions');
 
-        // If running on Netlify Dev ports, use relative path to functions
-        if (currentPort === '8889' || currentPort === '8888') {
-            console.log('Detected Netlify Dev environment, using /.netlify/functions');
-            return '/.netlify/functions';
-        }
-
-        // If in production (no port or standard ports), use relative path
-        if (!currentPort || currentPort === '80' || currentPort === '443') {
-            console.log('Detected production environment, using /.netlify/functions');
-            return '/.netlify/functions';
-        }
-
-        // For development on other ports (like 3000), check if there's a deployed URL
-        // or fall back to warning the user
-        console.warn(`Running on port ${currentPort} - Netlify functions may not be available.`);
-        console.warn('For local development with sync, run "npm run dev" instead.');
-
-        // Still try the relative path - it will fail with a helpful error message
         return '/.netlify/functions';
     }
 
@@ -145,7 +135,9 @@ class SyncService {
                     // JSON parse failed, use default message
                 }
             } else if (response.status === 404) {
-                errorMessage = 'Sync endpoint not found. Make sure you are running via "npm run dev" to enable Netlify functions.';
+                errorMessage = 'Sync endpoint not found. Make sure you are running via "npm run dev" (port 8888) or "node server.js" + Netlify Dev (port 3000).';
+            } else if (response.status === 503) {
+                errorMessage = 'Netlify functions unavailable. Make sure Netlify Dev is running on port 8889.';
             }
 
             throw new Error(errorMessage);
@@ -234,7 +226,9 @@ class SyncService {
                     // JSON parse failed, use default message
                 }
             } else if (response.status === 404) {
-                errorMessage = 'API endpoint not found. Make sure you are running via "npm run dev" to enable Netlify functions.';
+                errorMessage = 'API endpoint not found. Make sure you are running via "npm run dev" (port 8888) or "node server.js" + Netlify Dev (port 3000).';
+            } else if (response.status === 503) {
+                errorMessage = 'Netlify functions unavailable. Make sure Netlify Dev is running on port 8889.';
             }
 
             throw new Error(errorMessage);
@@ -260,7 +254,9 @@ class SyncService {
                     // JSON parse failed, use default message
                 }
             } else if (response.status === 404) {
-                errorMessage = 'API endpoint not found. Make sure you are running via "npm run dev" to enable Netlify functions.';
+                errorMessage = 'API endpoint not found. Make sure you are running via "npm run dev" (port 8888) or "node server.js" + Netlify Dev (port 3000).';
+            } else if (response.status === 503) {
+                errorMessage = 'Netlify functions unavailable. Make sure Netlify Dev is running on port 8889.';
             }
 
             throw new Error(errorMessage);
