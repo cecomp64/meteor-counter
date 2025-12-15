@@ -9,7 +9,7 @@ PROXY_PID=$!
 # Give proxy a moment to start
 sleep 1
 
-# Start Netlify Dev on port 8889 (localhost only)
+# Start Netlify Dev on port 8889
 echo "Starting Netlify Dev..."
 netlify dev --port 8889
 

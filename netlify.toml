@@ -3,10 +3,10 @@
   functions = "netlify/functions"
 
 [dev]
-  command = "node server.js"
-  targetPort = 3000
+  # Don't proxy to server.js - just serve functions directly
   port = 8889
   autoLaunch = false
+  framework = "#static"
 
 [[redirects]]
   from = "/api/*"
