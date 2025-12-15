@@ -2,9 +2,36 @@
 class SyncService {
     constructor(db) {
         this.db = db;
-        this.apiBase = '/.netlify/functions'; // Netlify functions endpoint
+        this.apiBase = this.detectApiBase();
         this.deviceId = this.getOrCreateDeviceId();
         this.syncInProgress = false;
+    }
+
+    // Detect the correct API base URL based on environment
+    detectApiBase() {
+        // Check if we're running through Netlify Dev (port 8889 or 8888)
+        const currentPort = window.location.port;
+        const currentHost = window.location.hostname;
+
+        // If running on Netlify Dev ports, use relative path to functions
+        if (currentPort === '8889' || currentPort === '8888') {
+            console.log('Detected Netlify Dev environment, using /.netlify/functions');
+            return '/.netlify/functions';
+        }
+
+        // If in production (no port or standard ports), use relative path
+        if (!currentPort || currentPort === '80' || currentPort === '443') {
+            console.log('Detected production environment, using /.netlify/functions');
+            return '/.netlify/functions';
+        }
+
+        // For development on other ports (like 3000), check if there's a deployed URL
+        // or fall back to warning the user
+        console.warn(`Running on port ${currentPort} - Netlify functions may not be available.`);
+        console.warn('For local development with sync, run "npm run dev" instead.');
+
+        // Still try the relative path - it will fail with a helpful error message
+        return '/.netlify/functions';
     }
 
     // Get or create a unique device ID
@@ -106,8 +133,22 @@ class SyncService {
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Sync failed');
+            // Try to parse error as JSON, but handle non-JSON responses (like 404 HTML)
+            let errorMessage = `Sync failed with status ${response.status}`;
+            const contentType = response.headers.get('content-type');
+
+            if (contentType && contentType.includes('application/json')) {
+                try {
+                    const error = await response.json();
+                    errorMessage = error.message || errorMessage;
+                } catch (e) {
+                    // JSON parse failed, use default message
+                }
+            } else if (response.status === 404) {
+                errorMessage = 'Sync endpoint not found. Make sure you are running via "npm run dev" to enable Netlify functions.';
+            }
+
+            throw new Error(errorMessage);
         }
 
         const result = await response.json();
@@ -182,8 +223,21 @@ class SyncService {
         const response = await fetch(`${this.apiBase}/get-sessions?deviceId=${this.deviceId}`);
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Failed to fetch sessions');
+            let errorMessage = `Failed to fetch sessions (status ${response.status})`;
+            const contentType = response.headers.get('content-type');
+
+            if (contentType && contentType.includes('application/json')) {
+                try {
+                    const error = await response.json();
+                    errorMessage = error.message || errorMessage;
+                } catch (e) {
+                    // JSON parse failed, use default message
+                }
+            } else if (response.status === 404) {
+                errorMessage = 'API endpoint not found. Make sure you are running via "npm run dev" to enable Netlify functions.';
+            }
+
+            throw new Error(errorMessage);
         }
 
         const result = await response.json();
@@ -195,8 +249,21 @@ class SyncService {
         const response = await fetch(`${this.apiBase}/get-session-details?sessionId=${sessionId}`);
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Failed to fetch session details');
+            let errorMessage = `Failed to fetch session details (status ${response.status})`;
+            const contentType = response.headers.get('content-type');
+
+            if (contentType && contentType.includes('application/json')) {
+                try {
+                    const error = await response.json();
+                    errorMessage = error.message || errorMessage;
+                } catch (e) {
+                    // JSON parse failed, use default message
+                }
+            } else if (response.status === 404) {
+                errorMessage = 'API endpoint not found. Make sure you are running via "npm run dev" to enable Netlify functions.';
+            }
+
+            throw new Error(errorMessage);
         }
 
         const result = await response.json();
