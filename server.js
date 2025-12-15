@@ -22,6 +22,12 @@ const mimeTypes = {
 const server = http.createServer((req, res) => {
   console.log(`${req.method} ${req.url}`);
 
+  // Proxy API requests to Netlify Dev (if it's running)
+  if (req.url.startsWith('/.netlify/functions/')) {
+    proxyToNetlify(req, res);
+    return;
+  }
+
   // Remove query string
   let filePath = '.' + req.url.split('?')[0];
 
@@ -49,7 +55,42 @@ const server = http.createServer((req, res) => {
   });
 });
 
+// Proxy function to forward requests to Netlify Dev
+function proxyToNetlify(req, res) {
+  const options = {
+    hostname: '127.0.0.1',
+    port: 8889,
+    path: req.url,
+    method: req.method,
+    headers: req.headers
+  };
+
+  const proxy = http.request(options, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    proxyRes.pipe(res);
+  });
+
+  proxy.on('error', (e) => {
+    console.error(`Proxy error: ${e.message}`);
+    console.error('Make sure Netlify Dev is running on port 8889');
+    res.writeHead(503, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      error: 'Netlify functions unavailable',
+      message: 'Make sure you are running "npm run dev" to start Netlify Dev server'
+    }));
+  });
+
+  // Forward request body for POST/PUT requests
+  if (req.method === 'POST' || req.method === 'PUT') {
+    req.pipe(proxy);
+  } else {
+    proxy.end();
+  }
+}
+
 server.listen(PORT, HOST, () => {
   console.log(`Server running at http://${HOST}:${PORT}/`);
+  console.log('Static files served from current directory');
+  console.log('API requests to /.netlify/functions/* will be proxied to Netlify Dev (port 8889)');
   console.log('Press Ctrl+C to stop');
 });
