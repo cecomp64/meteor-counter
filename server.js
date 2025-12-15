@@ -57,12 +57,16 @@ const server = http.createServer((req, res) => {
 
 // Proxy function to forward requests to Netlify Dev
 function proxyToNetlify(req, res) {
+  // Clone headers and set correct Host for Netlify Dev
+  const headers = { ...req.headers };
+  headers.host = 'localhost:8889';
+
   const options = {
     hostname: '127.0.0.1',
     port: 8889,
     path: req.url,
     method: req.method,
-    headers: req.headers
+    headers: headers
   };
 
   const proxy = http.request(options, (proxyRes) => {

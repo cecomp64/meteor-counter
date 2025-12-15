@@ -10,8 +10,9 @@ PROXY_PID=$!
 sleep 1
 
 # Start Netlify Dev on port 8889
+# --offline flag disables host checking for Docker compatibility
 echo "Starting Netlify Dev..."
-netlify dev --port 8889
+netlify dev --port 8889 --offline
 
 # Cleanup on exit
 kill $PROXY_PID 2>/dev/null

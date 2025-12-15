@@ -8,6 +8,11 @@
   autoLaunch = false
   framework = "#static"
 
+  # Allow connections from Docker by disabling host checks
+  # This is safe for local development
+  # https://cli.netlify.com/netlify-dev/
+  functionsPort = 8889
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
