@@ -5,12 +5,14 @@ let isNeon = false;
 
 function getDb() {
     if (!dbClient) {
-        if (!process.env.DATABASE_URL) {
-            throw new Error('DATABASE_URL environment variable is not set');
+        // Check for DATABASE_URL (local) or NETLIFY_DATABASE_URL (production)
+        const dbUrl = process.env.DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
+
+        if (!dbUrl) {
+            throw new Error('DATABASE_URL or NETLIFY_DATABASE_URL environment variable is not set');
         }
 
         // Detect if using Neon based on connection string
-        const dbUrl = process.env.DATABASE_URL;
         isNeon = dbUrl.includes('neon.tech') || dbUrl.includes('pooler.neon');
 
         if (isNeon) {
