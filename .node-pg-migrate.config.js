@@ -29,8 +29,8 @@ module.exports = {
   // Verbose output
   verbose: true,
 
-  // Ignore pattern for migration files
-  ignorePattern: '.*\\.map',
+  // Ignore pattern for migration files (regex to match files to ignore)
+  ignorePattern: '.*\\.(map|md)$',
 
   // Migration file extension
   migrationFileExtension: '.js'
