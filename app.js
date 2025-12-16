@@ -1697,10 +1697,13 @@ class MeteorObserver {
 
         try {
             let result;
+            // Pass deviceId to automatically migrate anonymous sessions
+            const deviceId = this.syncService ? this.syncService.deviceId : null;
+
             if (this.authMode === 'login') {
-                result = await this.authService.login(email, password);
+                result = await this.authService.login(email, password, deviceId);
             } else {
-                result = await this.authService.register(email, password);
+                result = await this.authService.register(email, password, deviceId);
             }
 
             if (result.success) {

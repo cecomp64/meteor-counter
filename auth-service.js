@@ -86,7 +86,7 @@ class AuthService {
     /**
      * Register a new user
      */
-    async register(email, password) {
+    async register(email, password, deviceId = null) {
         try {
             const response = await fetch('/.netlify/functions/auth-register', {
                 method: 'POST',
@@ -107,6 +107,11 @@ class AuthService {
             this.user = data.user;
             this.saveToStorage();
 
+            // Automatically migrate any anonymous sessions from this device
+            if (deviceId) {
+                await this.migrateDeviceSessions(deviceId);
+            }
+
             return { success: true, user: data.user };
 
         } catch (error) {
@@ -118,7 +123,7 @@ class AuthService {
     /**
      * Login user
      */
-    async login(email, password) {
+    async login(email, password, deviceId = null) {
         try {
             const response = await fetch('/.netlify/functions/auth-login', {
                 method: 'POST',
@@ -138,6 +143,11 @@ class AuthService {
             this.token = data.token;
             this.user = data.user;
             this.saveToStorage();
+
+            // Automatically migrate any anonymous sessions from this device
+            if (deviceId) {
+                await this.migrateDeviceSessions(deviceId);
+            }
 
             return { success: true, user: data.user };
 
@@ -193,15 +203,38 @@ class AuthService {
     /**
      * Migrate anonymous sessions to user account
      * This will update all device-only sessions to be associated with the user
+     * Called automatically after login/register
      */
     async migrateDeviceSessions(deviceId) {
         if (!this.isAuthenticated()) {
             return { success: false, error: 'Not authenticated' };
         }
 
-        // This will be called after login to associate existing sessions
-        // The sync logic will automatically update sessions when they're synced
-        // with the user's auth token
-        return { success: true, message: 'Sessions will be migrated on next sync' };
+        if (!deviceId) {
+            return { success: false, error: 'Device ID required' };
+        }
+
+        try {
+            const response = await fetch('/.netlify/functions/migrate-device-sessions', {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({ deviceId })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Migration failed');
+            }
+
+            console.log(`Migration complete: ${data.migratedCount} session(s) linked to account`);
+            return { success: true, migratedCount: data.migratedCount };
+
+        } catch (error) {
+            console.error('Migration error:', error);
+            // Don't fail the login/register if migration fails
+            // Just log it and continue
+            return { success: false, error: error.message };
+        }
     }
 }
