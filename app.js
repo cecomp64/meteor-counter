@@ -2,6 +2,7 @@
 class MeteorObserver {
     constructor() {
         this.db = new MeteorDB();
+        this.authService = new AuthService();
         this.syncService = null; // Will be initialized after DB
         this.currentSession = null;
         this.sessionStartTime = null;
@@ -9,20 +10,23 @@ class MeteorObserver {
         this.location = null;
         this.observations = [];
         this.viewingPastSession = false; // Track if viewing historical data
-        
+
+        // Auth UI state
+        this.authMode = 'login'; // 'login' or 'signup'
+
         // Touch tracking
         this.touchStart = null;
         this.touchStartPos = null;
         this.touchMovement = 0;
         this.isRecording = false;
-        
+
         // Canvas for visual feedback
         this.canvas = null;
         this.ctx = null;
-        
+
         // Audio context for sound (needs user gesture to initialize)
         this.audioContext = null;
-        
+
         // Store bound handlers so we can remove them
         this.boundHandlers = {
             mouseDown: null,
@@ -33,15 +37,16 @@ class MeteorObserver {
             touchMove: null,
             touchEnd: null
         };
-        
+
         this.init();
     }
 
     async init() {
         await this.db.init();
-        this.syncService = new SyncService(this.db);
+        this.syncService = new SyncService(this.db, this.authService);
         this.setupEventListeners();
         this.registerServiceWorker();
+        await this.verifyAuthToken();
         await this.updateSyncStatus();
     }
 
@@ -126,6 +131,39 @@ class MeteorObserver {
             radio.addEventListener('change', (e) => {
                 localStorage.setItem('location-privacy', e.target.value);
             });
+        });
+
+        // Auth controls
+        document.getElementById('auth-action-btn').addEventListener('click', () => {
+            this.handleAuthAction();
+        });
+
+        document.getElementById('auth-submit-btn').addEventListener('click', () => {
+            this.handleAuthSubmit();
+        });
+
+        document.getElementById('auth-toggle-mode-btn').addEventListener('click', () => {
+            this.toggleAuthMode();
+        });
+
+        document.getElementById('back-to-sync-from-auth-btn').addEventListener('click', () => {
+            this.showScreen('sync-settings-screen');
+        });
+
+        // Account screen
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            this.handleLogout();
+        });
+
+        document.getElementById('back-to-sync-from-account-btn').addEventListener('click', () => {
+            this.showScreen('sync-settings-screen');
+        });
+
+        // Enter key in auth form
+        document.getElementById('auth-password').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.handleAuthSubmit();
+            }
         });
     }
 
@@ -1476,6 +1514,9 @@ class MeteorObserver {
         const savedPrivacy = localStorage.getItem('location-privacy') || 'full';
         document.querySelector(`input[name="location-privacy"][value="${savedPrivacy}"]`).checked = true;
 
+        // Update auth status display
+        this.updateAuthStatusDisplay();
+
         // Display device ID
         document.getElementById('device-id-display').textContent = this.syncService.deviceId;
 
@@ -1542,6 +1583,154 @@ class MeteorObserver {
 
             btn.innerHTML = originalHTML;
             btn.disabled = false;
+        }
+    }
+
+    // ==================== Authentication Methods ====================
+
+    async verifyAuthToken() {
+        if (this.authService.isAuthenticated()) {
+            const result = await this.authService.verify();
+            if (!result.valid) {
+                console.log('Auth token expired or invalid, logging out');
+            } else {
+                console.log('Auth token verified, user:', result.user.email);
+            }
+        }
+    }
+
+    updateAuthStatusDisplay() {
+        const isAuth = this.authService.isAuthenticated();
+        const statusText = document.getElementById('auth-status-text');
+        const userEmail = document.getElementById('auth-user-email');
+        const userEmailText = document.getElementById('auth-user-email-text');
+        const authActionBtn = document.getElementById('auth-action-btn');
+        const authActionText = document.getElementById('auth-action-text');
+
+        if (isAuth) {
+            const user = this.authService.getCurrentUser();
+            statusText.style.display = 'none';
+            userEmail.style.display = 'block';
+            userEmailText.textContent = user.email;
+            authActionBtn.innerHTML = '<i class="bi bi-person-circle btn-icon"></i><span>Manage Account</span>';
+        } else {
+            statusText.style.display = 'block';
+            userEmail.style.display = 'none';
+            authActionBtn.innerHTML = '<i class="bi bi-box-arrow-in-right btn-icon"></i><span>Sign In / Sign Up</span>';
+        }
+    }
+
+    handleAuthAction() {
+        if (this.authService.isAuthenticated()) {
+            // Go to account screen
+            this.showAccountScreen();
+        } else {
+            // Go to login screen
+            this.authMode = 'login';
+            this.updateAuthScreen();
+            this.showScreen('auth-screen');
+        }
+    }
+
+    showAccountScreen() {
+        const user = this.authService.getCurrentUser();
+        if (!user) {
+            this.showScreen('sync-settings-screen');
+            return;
+        }
+
+        document.getElementById('account-email').textContent = user.email;
+        document.getElementById('account-created').textContent = new Date(user.createdAt).toLocaleDateString();
+        document.getElementById('account-last-login').textContent = user.lastLogin
+            ? new Date(user.lastLogin).toLocaleDateString()
+            : 'N/A';
+
+        this.showScreen('account-screen');
+    }
+
+    toggleAuthMode() {
+        this.authMode = this.authMode === 'login' ? 'signup' : 'login';
+        this.updateAuthScreen();
+    }
+
+    updateAuthScreen() {
+        const title = document.getElementById('auth-screen-title');
+        const submitText = document.getElementById('auth-submit-text');
+        const toggleText = document.getElementById('auth-toggle-text');
+
+        if (this.authMode === 'login') {
+            title.textContent = 'Sign In';
+            submitText.textContent = 'Sign In';
+            toggleText.textContent = "Don't have an account? Sign Up";
+        } else {
+            title.textContent = 'Create Account';
+            submitText.textContent = 'Create Account';
+            toggleText.textContent = 'Already have an account? Sign In';
+        }
+
+        // Clear error and form
+        document.getElementById('auth-error').style.display = 'none';
+        document.getElementById('auth-email').value = '';
+        document.getElementById('auth-password').value = '';
+    }
+
+    async handleAuthSubmit() {
+        const email = document.getElementById('auth-email').value.trim();
+        const password = document.getElementById('auth-password').value;
+        const errorDiv = document.getElementById('auth-error');
+        const submitBtn = document.getElementById('auth-submit-btn');
+
+        // Clear previous errors
+        errorDiv.style.display = 'none';
+
+        // Validate
+        if (!email || !password) {
+            errorDiv.textContent = 'Please enter both email and password';
+            errorDiv.style.display = 'block';
+            return;
+        }
+
+        // Disable button
+        submitBtn.disabled = true;
+        const originalHTML = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split btn-icon"></i> Please wait...';
+
+        try {
+            let result;
+            if (this.authMode === 'login') {
+                result = await this.authService.login(email, password);
+            } else {
+                result = await this.authService.register(email, password);
+            }
+
+            if (result.success) {
+                console.log('Auth successful:', result.user);
+                // Go back to sync settings
+                this.showScreen('sync-settings-screen');
+                this.updateAuthStatusDisplay();
+
+                // Update sync status to reflect new auth state
+                await this.updateSyncStatus();
+            } else {
+                errorDiv.textContent = result.error || 'Authentication failed';
+                errorDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHTML;
+            }
+        } catch (error) {
+            console.error('Auth error:', error);
+            errorDiv.textContent = 'An error occurred. Please try again.';
+            errorDiv.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalHTML;
+        }
+    }
+
+    handleLogout() {
+        if (confirm('Are you sure you want to sign out?')) {
+            this.authService.logout();
+            this.showScreen('sync-settings-screen');
+            this.updateAuthStatusDisplay();
         }
     }
 }
