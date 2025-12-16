@@ -37,6 +37,8 @@ services:
     environment:
       # Connect to postgres service
       - DATABASE_URL=postgresql://meteor:meteor_dev_password@postgres:5432/meteor_counter?sslmode=disable
+      # JWT secret for authentication tokens (change this in production!)
+      - JWT_SECRET=dev-secret-change-in-production-meteor-observer-2024
       # Make Netlify bind to all interfaces
       - HOST=0.0.0.0
       # Disable Edge Functions (we're only using regular Functions)
