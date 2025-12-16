@@ -1556,6 +1556,15 @@ class MeteorObserver {
 
             console.log('Sync results:', results);
 
+            // If authenticated, migrate any newly-synced anonymous sessions
+            if (this.authService.isAuthenticated() && results.synced > 0) {
+                console.log('Running post-sync migration...');
+                const deviceId = this.syncService ? this.syncService.deviceId : null;
+                if (deviceId) {
+                    await this.authService.migrateDeviceSessions(deviceId);
+                }
+            }
+
             // Update UI
             await this.updateSyncStatus();
 
