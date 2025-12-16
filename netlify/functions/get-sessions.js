@@ -1,5 +1,6 @@
-// Get sessions for a device
+// Get sessions for a device or user
 const { getDb, createResponse } = require('./db-utils');
+const { getAuthenticatedUserId } = require('./auth-utils');
 
 exports.handler = async (event) => {
     // Handle OPTIONS request for CORS
@@ -18,31 +19,40 @@ exports.handler = async (event) => {
         const limit = parseInt(params.limit) || 100;
         const offset = parseInt(params.offset) || 0;
 
+        // Check if user is authenticated
+        const userId = getAuthenticatedUserId(event);
+
         let sessions;
 
-        if (deviceId) {
-            // Get sessions for specific device
+        if (userId) {
+            // Get sessions for authenticated user (across all devices)
+            sessions = await sql`
+                SELECT
+                    id, start_time, end_time, duration, total_observations, notes,
+                    location_latitude, location_longitude, location_accuracy,
+                    location_privacy, device_id, created_at, updated_at
+                FROM sessions
+                WHERE user_id = ${userId}
+                ORDER BY start_time DESC
+                LIMIT ${limit} OFFSET ${offset}
+            `;
+        } else if (deviceId) {
+            // Get sessions for specific device (anonymous mode)
             sessions = await sql`
                 SELECT
                     id, start_time, end_time, duration, total_observations, notes,
                     location_latitude, location_longitude, location_accuracy,
                     location_privacy, created_at, updated_at
                 FROM sessions
-                WHERE device_id = ${deviceId}
+                WHERE device_id = ${deviceId} AND user_id IS NULL
                 ORDER BY start_time DESC
                 LIMIT ${limit} OFFSET ${offset}
             `;
         } else {
-            // Get all sessions (for admin/analytics)
-            sessions = await sql`
-                SELECT
-                    id, start_time, end_time, duration, total_observations,
-                    location_latitude, location_longitude, location_privacy,
-                    created_at, updated_at
-                FROM sessions
-                ORDER BY start_time DESC
-                LIMIT ${limit} OFFSET ${offset}
-            `;
+            // No auth and no device ID - return error
+            return createResponse(400, {
+                error: 'Either authentication or deviceId parameter is required'
+            });
         }
 
         return createResponse(200, {

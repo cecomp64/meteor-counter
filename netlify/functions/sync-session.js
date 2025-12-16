@@ -1,5 +1,6 @@
 // Sync a session to the remote database
 const { getDb, applyLocationPrivacy, createResponse } = require('./db-utils');
+const { getAuthenticatedUserId } = require('./auth-utils');
 
 exports.handler = async (event) => {
     // Handle OPTIONS request for CORS
@@ -14,6 +15,9 @@ exports.handler = async (event) => {
     try {
         const sql = getDb();
         const body = JSON.parse(event.body);
+
+        // Check if user is authenticated
+        const userId = getAuthenticatedUserId(event);
 
         const {
             localSessionId,
@@ -47,7 +51,8 @@ exports.handler = async (event) => {
                     location_latitude = ${privacyLocation.latitude},
                     location_longitude = ${privacyLocation.longitude},
                     location_accuracy = ${location?.accuracy || null},
-                    location_privacy = ${locationPrivacy}
+                    location_privacy = ${locationPrivacy},
+                    user_id = ${userId}
                 WHERE id = ${remoteSessionId}
                 RETURNING id, created_at, updated_at
             `;
@@ -63,12 +68,12 @@ exports.handler = async (event) => {
                 INSERT INTO sessions (
                     start_time, end_time, duration, total_observations, notes,
                     location_latitude, location_longitude, location_accuracy,
-                    location_privacy, device_id
+                    location_privacy, device_id, user_id
                 )
                 VALUES (
                     ${startTime}, ${endTime}, ${duration}, ${totalObservations}, ${notes},
                     ${privacyLocation.latitude}, ${privacyLocation.longitude}, ${location?.accuracy || null},
-                    ${locationPrivacy}, ${deviceId}
+                    ${locationPrivacy}, ${deviceId}, ${userId}
                 )
                 RETURNING id, created_at, updated_at
             `;
