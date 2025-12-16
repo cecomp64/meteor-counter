@@ -1,10 +1,23 @@
 // Sync service for remote database synchronization
 class SyncService {
-    constructor(db) {
+    constructor(db, authService = null) {
         this.db = db;
+        this.authService = authService;
         this.apiBase = this.detectApiBase();
         this.deviceId = this.getOrCreateDeviceId();
         this.syncInProgress = false;
+    }
+
+    /**
+     * Get headers for API requests (with auth if available)
+     */
+    getHeaders() {
+        if (this.authService && this.authService.isAuthenticated()) {
+            return this.authService.getAuthHeaders();
+        }
+        return {
+            'Content-Type': 'application/json'
+        };
     }
 
     // Detect the correct API base URL based on environment
@@ -116,9 +129,7 @@ class SyncService {
         // Call sync API
         const response = await fetch(`${this.apiBase}/sync-session`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: this.getHeaders(),
             body: JSON.stringify(sessionData)
         });
 
@@ -210,9 +221,17 @@ class SyncService {
         };
     }
 
-    // Fetch remote sessions for this device
+    // Fetch remote sessions for this device or user
     async fetchRemoteSessions() {
-        const response = await fetch(`${this.apiBase}/get-sessions?deviceId=${this.deviceId}`);
+        // If authenticated, don't need deviceId (will use token)
+        // If not authenticated, use deviceId
+        const url = this.authService && this.authService.isAuthenticated()
+            ? `${this.apiBase}/get-sessions`
+            : `${this.apiBase}/get-sessions?deviceId=${this.deviceId}`;
+
+        const response = await fetch(url, {
+            headers: this.getHeaders()
+        });
 
         if (!response.ok) {
             let errorMessage = `Failed to fetch sessions (status ${response.status})`;
@@ -240,7 +259,15 @@ class SyncService {
 
     // Get details for a specific remote session
     async fetchSessionDetails(sessionId) {
-        const response = await fetch(`${this.apiBase}/get-session-details?sessionId=${sessionId}`);
+        // If authenticated, don't need deviceId (will use token)
+        // If not authenticated, use deviceId
+        const url = this.authService && this.authService.isAuthenticated()
+            ? `${this.apiBase}/get-session-details?sessionId=${sessionId}`
+            : `${this.apiBase}/get-session-details?sessionId=${sessionId}&deviceId=${this.deviceId}`;
+
+        const response = await fetch(url, {
+            headers: this.getHeaders()
+        });
 
         if (!response.ok) {
             let errorMessage = `Failed to fetch session details (status ${response.status})`;
@@ -269,7 +296,13 @@ class SyncService {
     // Test connection to remote database
     async testConnection() {
         try {
-            const response = await fetch(`${this.apiBase}/get-sessions?deviceId=${this.deviceId}&limit=1`);
+            const url = this.authService && this.authService.isAuthenticated()
+                ? `${this.apiBase}/get-sessions?limit=1`
+                : `${this.apiBase}/get-sessions?deviceId=${this.deviceId}&limit=1`;
+
+            const response = await fetch(url, {
+                headers: this.getHeaders()
+            });
             return response.ok;
         } catch (error) {
             console.error('Connection test failed:', error);

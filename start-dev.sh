@@ -4,6 +4,10 @@
 # Install pg package if not present (workaround for npm proxy issues)
 ./install-pg.sh || exit 1
 
+# Run database migrations
+echo "Running database migrations..."
+npm run migrate:up || echo "Warning: Migration failed or no pending migrations"
+
 # Start Node.js proxy to forward 0.0.0.0:8888 -> 127.0.0.1:8889
 echo "Starting port forwarder (Node.js proxy)..."
 node proxy.js &

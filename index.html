@@ -178,6 +178,18 @@
             </div>
 
             <div class="chart-card" style="margin-bottom: 20px; text-align: left;">
+                <h3><i class="bi bi-person-circle"></i> Account</h3>
+                <div id="auth-status-display" style="font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-bottom: 15px;">
+                    <p id="auth-status-text">Not signed in (using device-only mode)</p>
+                    <p id="auth-user-email" style="display: none;"><strong>Signed in as:</strong> <span id="auth-user-email-text"></span></p>
+                </div>
+                <button id="auth-action-btn" class="secondary-btn" style="width: 100%;">
+                    <i class="bi bi-box-arrow-in-right btn-icon"></i>
+                    <span id="auth-action-text">Sign In / Sign Up</span>
+                </button>
+            </div>
+
+            <div class="chart-card" style="margin-bottom: 20px; text-align: left;">
                 <h3><i class="bi bi-info-circle"></i> Sync Status</h3>
                 <div id="sync-settings-status" style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">
                     <p>Device ID: <code id="device-id-display" style="font-family: 'Space Mono', monospace; font-size: 0.8rem; color: var(--nebula-blue);"></code></p>
@@ -191,6 +203,78 @@
                     Sync All Data
                 </button>
                 <button id="back-to-ready-from-sync-btn" class="secondary-btn">
+                    <i class="bi bi-arrow-left btn-icon"></i>
+                    Back
+                </button>
+            </div>
+        </div>
+
+        <!-- Auth Screen (Login/Signup) -->
+        <div id="auth-screen" class="screen">
+            <h2 class="section-title" id="auth-screen-title">Sign In</h2>
+
+            <div class="chart-card" style="margin-bottom: 20px; text-align: left;">
+                <p style="font-size: 0.9rem; color: rgba(255,255,255,0.6); margin-bottom: 15px;">
+                    Create an account to sync your observations across all your devices.
+                </p>
+
+                <div id="auth-error" style="display: none; padding: 10px; background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.3); border-radius: 8px; color: #ff4d4d; margin-bottom: 15px; font-size: 0.9rem;"></div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: rgba(255,255,255,0.8);">Email</label>
+                    <input type="email" id="auth-email" placeholder="your@email.com" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(77, 168, 255, 0.3); border-radius: 8px; color: #fff; font-family: 'Space Mono', monospace; font-size: 0.9rem; box-sizing: border-box;">
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: rgba(255,255,255,0.8);">Password</label>
+                    <input type="password" id="auth-password" placeholder="••••••••" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(77, 168, 255, 0.3); border-radius: 8px; color: #fff; font-family: 'Space Mono', monospace; font-size: 0.9rem; box-sizing: border-box;">
+                    <small style="font-size: 0.75rem; color: rgba(255,255,255,0.5); display: block; margin-top: 5px;" id="password-hint">At least 8 characters</small>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="auth-submit-btn" class="primary-btn">
+                    <i class="bi bi-box-arrow-in-right btn-icon"></i>
+                    <span id="auth-submit-text">Sign In</span>
+                </button>
+                <button id="auth-toggle-mode-btn" class="secondary-btn">
+                    <span id="auth-toggle-text">Don't have an account? Sign Up</span>
+                </button>
+                <button id="back-to-sync-from-auth-btn" class="secondary-btn">
+                    <i class="bi bi-arrow-left btn-icon"></i>
+                    Back
+                </button>
+            </div>
+        </div>
+
+        <!-- Account Screen (for logged in users) -->
+        <div id="account-screen" class="screen">
+            <h2 class="section-title">Account</h2>
+
+            <div class="chart-card" style="margin-bottom: 20px; text-align: left;">
+                <h3><i class="bi bi-person-circle"></i> User Information</h3>
+                <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-top: 15px;">
+                    <p><strong>Email:</strong> <span id="account-email"></span></p>
+                    <p><strong>Account Created:</strong> <span id="account-created"></span></p>
+                    <p><strong>Last Login:</strong> <span id="account-last-login"></span></p>
+                </div>
+            </div>
+
+            <div class="chart-card" style="margin-bottom: 20px; text-align: left;">
+                <h3><i class="bi bi-cloud-check"></i> Sync Benefits</h3>
+                <p style="font-size: 0.9rem; color: rgba(255,255,255,0.6);">
+                    <i class="bi bi-check-circle" style="color: #4da8ff;"></i> Access your data from any device<br>
+                    <i class="bi bi-check-circle" style="color: #4da8ff;"></i> Automatic cloud backup<br>
+                    <i class="bi bi-check-circle" style="color: #4da8ff;"></i> Cross-device synchronization
+                </p>
+            </div>
+
+            <div class="action-buttons">
+                <button id="logout-btn" class="primary-btn">
+                    <i class="bi bi-box-arrow-right btn-icon"></i>
+                    Sign Out
+                </button>
+                <button id="back-to-sync-from-account-btn" class="secondary-btn">
                     <i class="bi bi-arrow-left btn-icon"></i>
                     Back
                 </button>
@@ -255,6 +339,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="db.js?v=1.0.202512142057"></script>
+    <script src="auth-service.js?v=1.0.202512142057"></script>
     <script src="sync-service.js?v=1.0.202512142057"></script>
     <script src="app.js?v=1.0.202512142057"></script>
 </body>

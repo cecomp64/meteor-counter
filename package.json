@@ -7,16 +7,23 @@
     "auth": "netlify login",
     "serve": "node server.js",
     "build": "echo 'No build step needed for static site'",
-    "deploy": "netlify deploy --prod"
+    "deploy": "netlify deploy --prod",
+    "migrate": "node-pg-migrate",
+    "migrate:up": "node-pg-migrate up",
+    "migrate:down": "node-pg-migrate down",
+    "migrate:create": "node-pg-migrate create"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^0.9.0"
+    "@neondatabase/serverless": "^0.9.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
   },
   "optionalDependencies": {
     "pg": "^8.11.3"
   },
   "devDependencies": {
     "http-server": "^14.1.1",
-    "netlify-cli": "^17.0.0"
+    "netlify-cli": "^17.0.0",
+    "node-pg-migrate": "^7.8.1"
   }
 }

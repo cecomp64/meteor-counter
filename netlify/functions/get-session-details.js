@@ -1,5 +1,6 @@
 // Get full session details including observations
 const { getDb, createResponse } = require('./db-utils');
+const { getAuthenticatedUserId } = require('./auth-utils');
 
 exports.handler = async (event) => {
     // Handle OPTIONS request for CORS
@@ -15,23 +16,45 @@ exports.handler = async (event) => {
         const sql = getDb();
         const params = event.queryStringParameters || {};
         const sessionId = params.sessionId;
+        const deviceId = params.deviceId; // For anonymous access
 
         if (!sessionId) {
             return createResponse(400, { error: 'sessionId parameter is required' });
         }
 
-        // Get session
-        const sessions = await sql`
-            SELECT
-                id, start_time, end_time, duration, total_observations, notes,
-                location_latitude, location_longitude, location_accuracy,
-                location_privacy, device_id, created_at, updated_at
-            FROM sessions
-            WHERE id = ${sessionId}
-        `;
+        // Check if user is authenticated
+        const userId = getAuthenticatedUserId(event);
+
+        // Get session with ownership check
+        let sessions;
+        if (userId) {
+            // Authenticated user - check user_id
+            sessions = await sql`
+                SELECT
+                    id, start_time, end_time, duration, total_observations, notes,
+                    location_latitude, location_longitude, location_accuracy,
+                    location_privacy, device_id, user_id, created_at, updated_at
+                FROM sessions
+                WHERE id = ${sessionId} AND user_id = ${userId}
+            `;
+        } else if (deviceId) {
+            // Anonymous user - check device_id
+            sessions = await sql`
+                SELECT
+                    id, start_time, end_time, duration, total_observations, notes,
+                    location_latitude, location_longitude, location_accuracy,
+                    location_privacy, device_id, created_at, updated_at
+                FROM sessions
+                WHERE id = ${sessionId} AND device_id = ${deviceId} AND user_id IS NULL
+            `;
+        } else {
+            return createResponse(400, {
+                error: 'Either authentication or deviceId parameter is required'
+            });
+        }
 
         if (sessions.length === 0) {
-            return createResponse(404, { error: 'Session not found' });
+            return createResponse(404, { error: 'Session not found or access denied' });
         }
 
         const session = sessions[0];

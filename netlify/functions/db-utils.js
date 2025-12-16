@@ -2,6 +2,7 @@
 
 let dbClient;
 let isNeon = false;
+let pgPool; // For traditional pg client connections
 
 function getDb() {
     if (!dbClient) {
@@ -22,7 +23,7 @@ function getDb() {
         } else {
             // Use standard PostgreSQL driver for local development
             const { Pool } = require('pg');
-            const pool = new Pool({
+            pgPool = new Pool({
                 connectionString: dbUrl,
                 ssl: false // Local Docker doesn't need SSL
             });
@@ -33,7 +34,7 @@ function getDb() {
                     return acc + str + (i < values.length ? `$${i + 1}` : '');
                 }, '');
 
-                const result = await pool.query(query, values);
+                const result = await pgPool.query(query, values);
                 return result.rows;
             };
         }
@@ -42,6 +43,33 @@ function getDb() {
     }
 
     return dbClient;
+}
+
+// Get a traditional PostgreSQL client for direct queries (used by auth functions)
+async function getDbClient() {
+    if (!process.env.DATABASE_URL) {
+        throw new Error('DATABASE_URL environment variable is not set');
+    }
+
+    const dbUrl = process.env.DATABASE_URL;
+    isNeon = dbUrl.includes('neon.tech') || dbUrl.includes('pooler.neon');
+
+    if (isNeon) {
+        // For Neon, use the Pool from @neondatabase/serverless
+        const { Pool } = require('@neondatabase/serverless');
+        const pool = new Pool({ connectionString: dbUrl });
+        return pool;
+    } else {
+        // For local PostgreSQL, use standard pg Pool
+        if (!pgPool) {
+            const { Pool } = require('pg');
+            pgPool = new Pool({
+                connectionString: dbUrl,
+                ssl: false
+            });
+        }
+        return pgPool;
+    }
 }
 
 // Apply location privacy settings
@@ -87,6 +115,7 @@ function createResponse(statusCode, body) {
 
 module.exports = {
     getDb,
+    getDbClient,
     applyLocationPrivacy,
     corsHeaders,
     createResponse
