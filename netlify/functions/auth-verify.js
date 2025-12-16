@@ -78,10 +78,6 @@ exports.handler = async (event) => {
       statusCode: 500,
       body: JSON.stringify({ error: 'Verification failed', details: error.message })
     };
-  } finally {
-    // Close database connection
-    if (client && client.end) {
-      await client.end();
-    }
   }
+  // Note: Pool connections are reused, not closed after each request
 };
