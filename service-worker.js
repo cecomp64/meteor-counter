@@ -5,6 +5,8 @@ const urlsToCache = [
     './styles.css?v=1.0.202512142057',
     './app.js?v=1.0.202512142057',
     './db.js?v=1.0.202512142057',
+    './auth-service.js?v=1.0.202512142057',
+    './sync-service.js?v=1.0.202512142057',
     './manifest.json?v=1.0.202512142057',
     'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap',
     'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
