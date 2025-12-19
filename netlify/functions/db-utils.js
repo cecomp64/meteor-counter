@@ -47,11 +47,11 @@ function getDb() {
 
 // Get a traditional PostgreSQL client for direct queries (used by auth functions)
 async function getDbClient() {
-    if (!process.env.DATABASE_URL) {
-        throw new Error('DATABASE_URL environment variable is not set');
-    }
+    const dbUrl = process.env.DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
 
-    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) {
+        throw new Error('DATABASE_URL or NETLIFY_DATABASE_URL environment variable is not set');
+    }
     isNeon = dbUrl.includes('neon.tech') || dbUrl.includes('pooler.neon');
 
     if (isNeon) {
