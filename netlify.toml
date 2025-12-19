@@ -1,6 +1,7 @@
 [build]
   publish = "."
   functions = "netlify/functions"
+  command = "npm run migrate:up"
 
 [dev]
   # Don't proxy to server.js - just serve functions directly

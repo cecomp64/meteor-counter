@@ -2,8 +2,8 @@
 // This file configures database migrations for the Meteor Observer app
 
 module.exports = {
-  // Database connection - uses DATABASE_URL environment variable
-  databaseUrl: process.env.DATABASE_URL || 'postgresql://meteor:meteor_dev_password@localhost:5432/meteor_counter?sslmode=disable',
+  // Database connection - uses DATABASE_URL or NETLIFY_DATABASE_URL environment variable
+  databaseUrl: process.env.DATABASE_URL || process.env.NETLIFY_DATABASE_URL || 'postgresql://meteor:meteor_dev_password@localhost:5432/meteor_counter?sslmode=disable',
 
   // Directory where migration files are stored
   dir: 'migrations',
