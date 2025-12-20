@@ -22,6 +22,7 @@ FILES_TO_UPDATE=(
     "service-worker.js"
     "README.md"
     "app.js"
+    "package.json"
 )
 
 # Counter for changes
