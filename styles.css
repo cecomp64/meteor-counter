@@ -297,6 +297,18 @@ body {
     letter-spacing: 0.1em;
 }
 
+.last-observation {
+    margin-top: 10px;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.4;
+}
+
+.last-obs-label {
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 400;
+}
+
 /* Touch Area */
 .touch-area {
     width: 100%;
