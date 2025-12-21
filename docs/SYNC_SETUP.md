@@ -34,10 +34,10 @@ The sync feature allows users to:
 Connect to your Neon database and run the SQL schema:
 
 ```bash
-psql "postgresql://user:password@host/database?sslmode=require" < schema.sql
+psql "postgresql://user:password@host/database?sslmode=require" < src/database/schema.sql
 ```
 
-Or copy the contents of `schema.sql` and run it in the Neon SQL Editor.
+Or copy the contents of `src/database/schema.sql` and run it in the Neon SQL Editor.
 
 ### 3. Configure Netlify
 
@@ -205,7 +205,7 @@ Gets full session details including observations.
 - Check Netlify function logs for errors
 
 ### Data not appearing in database
-- Run the schema.sql file to ensure tables exist
+- Run the src/database/schema.sql file to ensure tables exist
 - Check that DATABASE_URL has `?sslmode=require` at the end
 - Verify Neon database is not in sleep mode
 

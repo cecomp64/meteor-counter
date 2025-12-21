@@ -6,7 +6,7 @@ const path = require('path');
 
 const PORT = 8889;
 const HOST = '0.0.0.0'; // Bind to all interfaces for Docker
-const FUNCTIONS_DIR = './netlify/functions';
+const FUNCTIONS_DIR = '../../netlify/functions';
 
 const server = http.createServer(async (req, res) => {
   console.log(`[Functions] ${req.method} ${req.url}`);

@@ -29,11 +29,20 @@ const server = http.createServer((req, res) => {
   }
 
   // Remove query string
-  let filePath = '.' + req.url.split('?')[0];
+  let filePath = req.url.split('?')[0];
 
   // Default to index.html
-  if (filePath === './') {
-    filePath = './index.html';
+  if (filePath === '/') {
+    filePath = '/index.html';
+  }
+
+  // Map paths to the new structure
+  if (filePath.startsWith('/src/')) {
+    // Keep /src/ paths as-is (for client JS files)
+    filePath = path.join(__dirname, '../..', filePath);
+  } else {
+    // Static assets are in /public/
+    filePath = path.join(__dirname, '../../public', filePath);
   }
 
   const extname = String(path.extname(filePath)).toLowerCase();

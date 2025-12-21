@@ -6,7 +6,7 @@ This directory includes a complete Docker-based development environment that iso
 
 ```bash
 # Start everything
-./dev.sh start
+./scripts/dev.sh start
 
 # Wait a moment for services to start, then open:
 # http://localhost:8888
@@ -30,33 +30,33 @@ That's it! The app and database are now running in Docker containers.
 
 ```bash
 # Start services
-./dev.sh start
+./scripts/dev.sh start
 
 # View logs
-./dev.sh logs              # All logs
-./dev.sh logs app          # Just app logs
-./dev.sh logs postgres     # Just database logs
+./scripts/dev.sh logs              # All logs
+./scripts/dev.sh logs app          # Just app logs
+./scripts/dev.sh logs postgres     # Just database logs
 
 # Access database
-./dev.sh psql
+./scripts/dev.sh psql
 
 # Open shell in app container (for debugging)
-./dev.sh shell
+./scripts/dev.sh shell
 
 # Reset database
-./dev.sh reset-db
+./scripts/dev.sh reset-db
 
 # Restart services
-./dev.sh restart
+./scripts/dev.sh restart
 
 # Stop services
-./dev.sh stop
+./scripts/dev.sh stop
 
 # Rebuild containers (if you change Dockerfile)
-./dev.sh rebuild
+./scripts/dev.sh rebuild
 
 # Clean everything (including data!)
-./dev.sh clean
+./scripts/dev.sh clean
 ```
 
 ## 📁 How It Works
@@ -64,9 +64,10 @@ That's it! The app and database are now running in Docker containers.
 ### File Mounting
 Your local files are mounted into the container:
 ```
-./index.html    → /workspace/index.html
-./app.js        → /workspace/app.js
-./db.js         → /workspace/db.js
+./public/           → /workspace/public/
+./src/              → /workspace/src/
+./scripts/          → /workspace/scripts/
+./netlify/          → /workspace/netlify/
 ...etc
 ```
 
@@ -81,7 +82,7 @@ Both containers are on the same network, so they can talk to each other:
 
 1. **Start services:**
    ```bash
-   ./dev.sh start
+   ./scripts/dev.sh start
    ```
 
 2. **Open app:**
@@ -100,7 +101,7 @@ Both containers are on the same network, so they can talk to each other:
 
 5. **Verify in database:**
    ```bash
-   ./dev.sh psql
+   ./scripts/dev.sh psql
    ```
 
    Then in psql:
@@ -116,17 +117,17 @@ Both containers are on the same network, so they can talk to each other:
 If you just pulled the latest code or updated package.json:
 ```bash
 # Rebuild containers with fresh dependencies
-./dev.sh rebuild
+./scripts/dev.sh rebuild
 ```
 
 ### App won't start
 ```bash
 # Check logs
-./dev.sh logs app
+./scripts/dev.sh logs app
 
 # Common issue: port already in use
 lsof -ti:8888 | xargs kill -9
-./dev.sh restart
+./scripts/dev.sh restart
 ```
 
 ### Database connection errors
@@ -138,13 +139,13 @@ docker-compose ps
 # meteor-counter-db    Up (healthy)
 
 # Reset database
-./dev.sh reset-db
+./scripts/dev.sh reset-db
 ```
 
 ### "npm install" errors / missing dependencies
 ```bash
 # Rebuild the container
-./dev.sh rebuild
+./scripts/dev.sh rebuild
 ```
 
 ### Changes not appearing
@@ -154,13 +155,13 @@ The app should auto-reload when you edit files. If not:
 docker-compose restart app
 
 # Or check logs for errors
-./dev.sh logs app
+./scripts/dev.sh logs app
 ```
 
 ### Container keeps restarting
 ```bash
 # Check what's wrong
-./dev.sh logs app
+./scripts/dev.sh logs app
 
 # Common causes:
 # - Syntax error in JavaScript
@@ -172,7 +173,7 @@ docker-compose restart app
 
 ```bash
 # 1. Start services
-./dev.sh start
+./scripts/dev.sh start
 
 # 2. Open in browser
 open http://localhost:8888
@@ -181,20 +182,20 @@ open http://localhost:8888
 # Files auto-reload!
 
 # 4. Check logs if needed
-./dev.sh logs app
+./scripts/dev.sh logs app
 
 # 5. Test database
-./dev.sh psql
+./scripts/dev.sh psql
 
 # 6. When done
-./dev.sh stop
+./scripts/dev.sh stop
 ```
 
 ## 📊 Database Access
 
 ### From command line:
 ```bash
-./dev.sh psql
+./scripts/dev.sh psql
 ```
 
 ### From GUI tools:
@@ -229,18 +230,18 @@ GROUP BY s.id, s.start_time;
 
 ```bash
 # Stop services (keeps data)
-./dev.sh stop
+./scripts/dev.sh stop
 
 # Remove everything including data
-./dev.sh clean
+./scripts/dev.sh clean
 ```
 
 ## 💡 Tips
 
 - **Live Reload**: Edit any `.js`, `.html`, or `.css` file and the app auto-reloads
 - **Isolated npm**: Your local npm config won't interfere
-- **Fresh Start**: `./dev.sh rebuild` gives you a clean slate
-- **Database Persistence**: Data survives container restarts (but not `./dev.sh clean`)
+- **Fresh Start**: `./scripts/dev.sh rebuild` gives you a clean slate
+- **Database Persistence**: Data survives container restarts (but not `./scripts/dev.sh clean`)
 
 ## 🐛 Advanced Debugging
 
@@ -266,9 +267,9 @@ docker-compose exec app ping postgres
 When you pull new changes from git:
 ```bash
 git pull
-./dev.sh rebuild  # Rebuilds containers with new dependencies
+./scripts/dev.sh rebuild  # Rebuilds containers with new dependencies
 ```
 
 ---
 
-Need help? Check the logs with `./dev.sh logs` or open a shell with `./dev.sh shell`.
+Need help? Check the logs with `./scripts/dev.sh logs` or open a shell with `./scripts/dev.sh shell`.

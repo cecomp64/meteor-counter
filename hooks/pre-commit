@@ -6,7 +6,7 @@
 echo "🚀 Running pre-commit hook: Updating version..."
 
 # Run the update-version script
-./update-version.sh
+./scripts/update-version.sh
 
 # Check if the version update was successful
 if [ $? -eq 0 ]; then
@@ -14,7 +14,7 @@ if [ $? -eq 0 ]; then
 
     # Add the updated files to the staging area
     # This ensures the version changes are included in the current commit
-    git add index.html manifest.json service-worker.js README.md app.js package.json
+    git add public/index.html public/manifest.json public/service-worker.js README.md src/client/app.js package.json
 
     echo "✓ Version files staged for commit"
 else

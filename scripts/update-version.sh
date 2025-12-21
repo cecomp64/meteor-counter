@@ -17,11 +17,11 @@ VERSION_PATTERN_GREP='1\.0\.[0-9]\+'  # For grep (basic regex)
 
 # Find all files that might contain version numbers (excluding .git, node_modules, etc.)
 FILES_TO_UPDATE=(
-    "index.html"
-    "manifest.json"
-    "service-worker.js"
+    "public/index.html"
+    "public/manifest.json"
+    "public/service-worker.js"
     "README.md"
-    "app.js"
+    "src/client/app.js"
     "package.json"
 )
 

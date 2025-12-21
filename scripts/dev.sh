@@ -48,7 +48,7 @@ case "$1" in
   reset-db)
     echo "⚠️  Resetting database..."
     docker-compose exec postgres psql -U meteor -d meteor_counter -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-    docker-compose exec postgres psql -U meteor -d meteor_counter < schema.sql
+    docker-compose exec postgres psql -U meteor -d meteor_counter < src/database/schema.sql
     echo "✅ Database reset complete!"
     ;;
 

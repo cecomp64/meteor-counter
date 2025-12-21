@@ -32,7 +32,7 @@ This guide shows you how to test the remote sync functionality locally during de
    sudo apt-get install postgresql-client
 
    # Run the schema
-   psql "your-connection-string-here" < schema.sql
+   psql "your-connection-string-here" < src/database/schema.sql
    ```
 
 5. **Install dependencies and run**
@@ -88,7 +88,7 @@ This guide shows you how to test the remote sync functionality locally during de
          - "5432:5432"
        volumes:
          - postgres_data:/var/lib/postgresql/data
-         - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+         - ./src/database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
        healthcheck:
          test: ["CMD-SHELL", "pg_isready -U meteor"]
          interval: 5s
@@ -180,7 +180,7 @@ GRANT ALL ON SCHEMA public TO meteor;
 \q
 
 # Run schema
-psql meteor_counter < schema.sql
+psql meteor_counter < src/database/schema.sql
 ```
 
 ### Ubuntu/Debian:
@@ -203,7 +203,7 @@ ALTER DATABASE meteor_counter OWNER TO meteor;
 \q
 
 # Run schema
-sudo -u postgres psql meteor_counter < schema.sql
+sudo -u postgres psql meteor_counter < src/database/schema.sql
 ```
 
 ### Windows:
@@ -269,11 +269,11 @@ psql "your-connection-string-here"
 ### Schema errors / tables don't exist
 ```bash
 # Re-run schema:
-psql "your-connection-string-here" < schema.sql
+psql "your-connection-string-here" < src/database/schema.sql
 
 # Or manually:
 psql "your-connection-string-here"
-\i schema.sql
+\i src/database/schema.sql
 \q
 ```
 
@@ -346,7 +346,7 @@ Just use your DATABASE_URL connection string!
 ### Drop all data:
 ```bash
 psql "your-connection-string-here" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-psql "your-connection-string-here" < schema.sql
+psql "your-connection-string-here" < src/database/schema.sql
 ```
 
 ### Or just observations:
