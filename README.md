@@ -1,6 +1,6 @@
 # Meteor Observer 🌠
 
-**Version 1.0.202512201557**
+**Version 1.0.202512201601**
 
 A Progressive Web App (PWA) for tracking meteor shower observations with precision timing, brightness analysis, and offline capability.
 
@@ -71,6 +71,30 @@ A Progressive Web App (PWA) for tracking meteor shower observations with precisi
   - 26-50: Dim meteor (easily visible)
   - 51-75: Bright meteor (catches attention)
   - 76-100: Very bright meteor (fireball)
+
+## Development Setup
+
+If you're contributing to this project or running it locally, you'll want to set up the git hooks for automatic version management:
+
+```bash
+# Install git hooks (one-time setup)
+./hooks/install.sh
+```
+
+This installs a pre-commit hook that automatically:
+- Updates the version number in all files (using Pacific timezone)
+- Stages the version changes to be included in your commit
+- Ensures every commit has a unique timestamp-based version
+
+The version files updated are:
+- `index.html`, `manifest.json`, `service-worker.js`, `README.md`, `app.js`, `package.json`
+
+You can also manually update the version at any time:
+```bash
+./update-version.sh
+```
+
+For full local development setup including database sync, see [LOCAL_DEV_SETUP.md](LOCAL_DEV_SETUP.md).
 
 ## Deployment
 
