@@ -1,6 +1,6 @@
 {
   "name": "meteor-counter",
-  "version": "1.0.202512201621",
+  "version": "1.0.202512201628",
   "description": "Meteor observation tracking PWA with remote sync",
   "scripts": {
     "dev": "./scripts/start-dev.sh",
