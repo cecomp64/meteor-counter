@@ -1,7 +1,7 @@
 {
     "name": "Meteor Observer",
     "short_name": "MeteorObs",
-    "version": "1.0.202512201628",
+    "version": "1.0.202512201636",
     "description": "Track meteor shower observations with precision timing and analysis",
     "start_url": "./",
     "display": "standalone",

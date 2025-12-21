@@ -274,6 +274,30 @@ class MeteorDB {
             lastSyncedAt: new Date().toISOString()
         });
     }
+
+    async getSessionByRemoteId(remoteId) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['sessions'], 'readonly');
+            const store = transaction.objectStore('sessions');
+            const index = store.index('remoteId');
+            const request = index.get(remoteId);
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async getObservationByRemoteId(remoteId) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['observations'], 'readonly');
+            const store = transaction.objectStore('observations');
+            const index = store.index('remoteId');
+            const request = index.get(remoteId);
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
 }
 
 // Export for use in app.js

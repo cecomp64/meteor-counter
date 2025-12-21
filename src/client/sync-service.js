@@ -309,6 +309,116 @@ class SyncService {
             return false;
         }
     }
+
+    // Download all remote sessions to local cache
+    // This is called after login/register to sync down the user's existing sessions
+    async downloadRemoteSessions() {
+        if (!this.authService || !this.authService.isAuthenticated()) {
+            console.log('Not authenticated, skipping download');
+            return { downloaded: 0, skipped: 0, errors: [] };
+        }
+
+        const results = {
+            downloaded: 0,
+            skipped: 0,
+            errors: []
+        };
+
+        try {
+            console.log('Fetching remote sessions...');
+            const remoteSessions = await this.fetchRemoteSessions();
+            console.log(`Found ${remoteSessions.length} remote session(s)`);
+
+            for (const remoteSession of remoteSessions) {
+                try {
+                    // Check if we already have this session locally
+                    const existingSession = await this.db.getSessionByRemoteId(remoteSession.id);
+
+                    if (existingSession) {
+                        console.log(`Session ${remoteSession.id} already exists locally (local ID: ${existingSession.id}), skipping`);
+                        results.skipped++;
+                        continue;
+                    }
+
+                    // Fetch full session details including observations
+                    console.log(`Downloading session ${remoteSession.id}...`);
+                    const sessionDetails = await this.fetchSessionDetails(remoteSession.id);
+
+                    // Create local session
+                    const localSessionData = {
+                        remoteId: sessionDetails.id,
+                        startTime: sessionDetails.start_time,
+                        endTime: sessionDetails.end_time,
+                        duration: sessionDetails.duration,
+                        totalObservations: sessionDetails.total_observations,
+                        notes: sessionDetails.notes || '',
+                        location: sessionDetails.location ? {
+                            latitude: sessionDetails.location.latitude,
+                            longitude: sessionDetails.location.longitude,
+                            accuracy: sessionDetails.location.accuracy
+                        } : null,
+                        locationPrivacy: sessionDetails.location_privacy || 'full',
+                        syncStatus: 'synced',
+                        lastSyncedAt: new Date().toISOString()
+                    };
+
+                    const localSessionId = await this.db.saveSession(localSessionData);
+                    console.log(`Created local session ${localSessionId} for remote session ${remoteSession.id}`);
+
+                    // Download observations for this session
+                    if (sessionDetails.observations && sessionDetails.observations.length > 0) {
+                        for (const remoteObs of sessionDetails.observations) {
+                            // Check if we already have this observation
+                            const existingObs = await this.db.getObservationByRemoteId(remoteObs.id);
+
+                            if (existingObs) {
+                                console.log(`  Observation ${remoteObs.id} already exists, skipping`);
+                                continue;
+                            }
+
+                            const localObsData = {
+                                sessionId: localSessionId,
+                                remoteId: remoteObs.id,
+                                timestamp: remoteObs.timestamp,
+                                duration: remoteObs.duration,
+                                intensity: remoteObs.intensity,
+                                location: remoteObs.location ? {
+                                    latitude: remoteObs.location.latitude,
+                                    longitude: remoteObs.location.longitude,
+                                    accuracy: remoteObs.location.accuracy
+                                } : null,
+                                syncStatus: 'synced',
+                                lastSyncedAt: new Date().toISOString()
+                            };
+
+                            await this.db.saveObservation(localObsData);
+                        }
+                        console.log(`  Downloaded ${sessionDetails.observations.length} observation(s)`);
+                    }
+
+                    results.downloaded++;
+
+                } catch (error) {
+                    console.error(`Failed to download session ${remoteSession.id}:`, error);
+                    results.errors.push({
+                        sessionId: remoteSession.id,
+                        error: error.message
+                    });
+                }
+            }
+
+            console.log(`Download complete: ${results.downloaded} downloaded, ${results.skipped} skipped, ${results.errors.length} errors`);
+            return results;
+
+        } catch (error) {
+            console.error('Failed to download remote sessions:', error);
+            results.errors.push({
+                sessionId: 'all',
+                error: error.message
+            });
+            return results;
+        }
+    }
 }
 
 // Export for use in app.js
