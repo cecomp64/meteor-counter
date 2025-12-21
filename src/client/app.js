@@ -20,6 +20,13 @@ class MeteorObserver {
         this.touchMovement = 0;
         this.isRecording = false;
 
+        // Practice mode
+        this.practiceMode = false;
+        this.practiceRate = 'slow'; // slow, medium, fast
+        this.practiceMeteorTimer = null;
+        this.currentPracticeMeteor = null;
+        this.practiceScore = { correct: 0, total: 0, accuracySum: 0 };
+
         // Canvas for visual feedback
         this.canvas = null;
         this.ctx = null;
@@ -71,9 +78,13 @@ class MeteorObserver {
 
         // Ready screen
         document.getElementById('start-observing-btn').addEventListener('click', () => {
-            this.startObserving();
+            this.startObserving(false); // normal mode
         });
-        
+
+        document.getElementById('start-practice-btn').addEventListener('click', () => {
+            this.startObserving(true); // practice mode
+        });
+
         document.getElementById('view-past-sessions-btn').addEventListener('click', () => {
             this.showPastSessions();
         });
@@ -165,6 +176,14 @@ class MeteorObserver {
                 this.handleAuthSubmit();
             }
         });
+
+        // Practice mode rate controls
+        document.querySelectorAll('.practice-rate-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const rate = btn.dataset.rate;
+                this.setPracticeRate(rate);
+            });
+        });
     }
 
     async requestLocation() {
@@ -226,10 +245,13 @@ class MeteorObserver {
         }
     }
 
-    async startObserving() {
+    async startObserving(isPracticeMode = false) {
         // Clean up any previous session state
         this.cleanupObservingSession();
-        
+
+        // Set practice mode
+        this.practiceMode = isPracticeMode;
+
         // Initialize AudioContext on user gesture (required for mobile)
         if (!this.audioContext) {
             try {
@@ -239,7 +261,7 @@ class MeteorObserver {
                 console.error('Failed to create AudioContext:', e);
             }
         }
-        
+
         // Resume AudioContext if it's suspended (required on iOS)
         if (this.audioContext && this.audioContext.state === 'suspended') {
             try {
@@ -249,14 +271,19 @@ class MeteorObserver {
                 console.error('Failed to resume AudioContext:', e);
             }
         }
-        
+
         this.sessionStartTime = new Date();
         this.observations = [];
         this.isRecording = false;
         this.touchStart = null;
         this.touchStartPos = null;
         this.touchMovement = 0;
-        
+
+        // Reset practice score if in practice mode
+        if (isPracticeMode) {
+            this.practiceScore = { correct: 0, total: 0, accuracySum: 0 };
+        }
+
         // Create session in database
         const session = {
             startTime: this.sessionStartTime.toISOString(),
@@ -264,7 +291,7 @@ class MeteorObserver {
             observations: [],
             notes: ''
         };
-        
+
         this.currentSession = await this.db.saveSession(session);
 
         // Update sync status since we created new data
@@ -279,17 +306,30 @@ class MeteorObserver {
         // Hide last observation info initially
         document.getElementById('last-obs-count').style.display = 'none';
         document.getElementById('last-obs-rate').style.display = 'none';
-        
+
+        // Show/hide practice mode controls
+        const practiceModePanel = document.getElementById('practice-mode-panel');
+        if (isPracticeMode) {
+            practiceModePanel.style.display = 'block';
+        } else {
+            practiceModePanel.style.display = 'none';
+        }
+
         // Setup canvas
         this.canvas = document.getElementById('visual-feedback');
         this.ctx = this.canvas.getContext('2d');
         this.resizeCanvas();
-        
+
         // Setup touch area listeners
         this.setupTouchArea();
-        
+
         // Start timer
         this.startSessionTimer();
+
+        // Start practice meteors if in practice mode
+        if (isPracticeMode) {
+            this.startPracticeMeteors();
+        }
 
         // Play ascending chime to signal session start
         setTimeout(() => {
@@ -364,15 +404,18 @@ class MeteorObserver {
             clearInterval(this.sessionTimer);
             this.sessionTimer = null;
         }
-        
+
+        // Stop practice mode meteors
+        this.stopPracticeMeteors();
+
         // Remove touch area handlers
         this.removeTouchAreaHandlers();
-        
+
         // Clear canvas
         if (this.ctx && this.canvas) {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         }
-        
+
         // Reset recording state
         this.isRecording = false;
         this.touchStart = null;
@@ -408,27 +451,32 @@ class MeteorObserver {
 
     async handleTouchEnd(e) {
         console.log('handleTouchEnd called, isRecording:', this.isRecording);
-        
+
         if (!this.isRecording) {
             console.log('Not recording, ignoring');
             return;
         }
-        
+
         // Immediately set to false to prevent re-entry
         this.isRecording = false;
         console.log('Recording stopped, processing observation');
-        
+
         const duration = Date.now() - this.touchStart;
-        
+
         // Only record if press was at least 100ms
         if (duration < 100) {
             this.clearCanvas();
             return;
         }
-        
+
         // Calculate intensity (0-100) based on movement
         const intensity = Math.min(100, Math.round(this.touchMovement / 2));
-        
+
+        // Practice mode scoring
+        if (this.practiceMode && this.currentPracticeMeteor) {
+            this.calculatePracticeScore(duration, intensity);
+        }
+
         // Create observation
         const observation = {
             sessionId: this.currentSession,
@@ -437,7 +485,7 @@ class MeteorObserver {
             intensity: intensity,
             location: this.location
         };
-        
+
         // Save to database
         console.log('Saving observation:', observation);
         await this.db.saveObservation(observation);
@@ -449,12 +497,12 @@ class MeteorObserver {
 
         // Update UI
         this.updateStats();
-        
+
         // Feedback
         this.playSound();
         this.vibrate();
         this.drawMeteorComplete();
-        
+
         setTimeout(() => this.clearCanvas(), 500);
     }
 
@@ -1315,7 +1363,7 @@ class MeteorObserver {
             // Footer on last page
             pdf.setTextColor(100, 100, 100);
             pdf.setFontSize(8);
-            pdf.text('Generated by Meteor Observer v1.0.202512201654', pageWidth / 2, pageHeight - 10, { align: 'center' });
+            pdf.text('Generated by Meteor Observer v1.0.202512201709', pageWidth / 2, pageHeight - 10, { align: 'center' });
             pdf.text(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, pageHeight - 6, { align: 'center' });
             
             // Save PDF
@@ -1502,7 +1550,278 @@ class MeteorObserver {
         document.getElementById(screenId).classList.add('active');
     }
 
-    // Sync-related methods
+    // ==================== Practice Mode Methods ====================
+
+    setPracticeRate(rate) {
+        this.practiceRate = rate;
+
+        // Update button states
+        document.querySelectorAll('.practice-rate-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.rate === rate);
+        });
+
+        // Restart meteor generation with new rate
+        if (this.practiceMode) {
+            this.stopPracticeMeteors();
+            this.startPracticeMeteors();
+        }
+
+        console.log('Practice rate set to:', rate);
+    }
+
+    startPracticeMeteors() {
+        // Clear any existing timer
+        this.stopPracticeMeteors();
+
+        // Define intervals in milliseconds
+        const intervals = {
+            slow: 15000,    // ~1 every 15 seconds
+            medium: 10000,  // ~1 every 10 seconds
+            fast: 5000      // ~1 every 5 seconds
+        };
+
+        const interval = intervals[this.practiceRate] || intervals.slow;
+
+        // Schedule first meteor with a slight delay
+        setTimeout(() => {
+            this.generatePracticeMeteor();
+
+            // Then schedule recurring meteors with some randomness
+            this.practiceMeteorTimer = setInterval(() => {
+                this.generatePracticeMeteor();
+            }, interval);
+        }, 1000);
+    }
+
+    stopPracticeMeteors() {
+        if (this.practiceMeteorTimer) {
+            clearInterval(this.practiceMeteorTimer);
+            this.practiceMeteorTimer = null;
+        }
+        this.currentPracticeMeteor = null;
+    }
+
+    generatePracticeMeteor() {
+        if (!this.practiceMode || !this.canvas) return;
+
+        // Random starting position (from edges)
+        const startSide = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
+        let startX, startY, endX, endY;
+
+        const canvasWidth = this.canvas.width;
+        const canvasHeight = this.canvas.height;
+
+        // Define start and end points based on side
+        // Meteors come from edges and travel diagonally across screen
+        switch (startSide) {
+            case 0: // top -> bottom
+                startX = Math.random() * canvasWidth;
+                startY = 0;
+                // End somewhere on bottom half, offset from start
+                endX = Math.random() * canvasWidth;
+                endY = canvasHeight * (0.7 + Math.random() * 0.3); // 70-100% down
+                break;
+            case 1: // right -> left
+                startX = canvasWidth;
+                startY = Math.random() * canvasHeight;
+                // End somewhere on left half
+                endX = canvasWidth * (Math.random() * 0.3); // 0-30% from left
+                endY = Math.random() * canvasHeight;
+                break;
+            case 2: // bottom -> top
+                startX = Math.random() * canvasWidth;
+                startY = canvasHeight;
+                // End somewhere on top half
+                endX = Math.random() * canvasWidth;
+                endY = canvasHeight * (Math.random() * 0.3); // 0-30% from top
+                break;
+            case 3: // left -> right
+                startX = 0;
+                startY = Math.random() * canvasHeight;
+                // End somewhere on right half
+                endX = canvasWidth * (0.7 + Math.random() * 0.3); // 70-100% from left
+                endY = Math.random() * canvasHeight;
+                break;
+        }
+
+        // Random properties
+        const duration = 0.5 + Math.random() * 2; // 0.5 to 2.5 seconds
+        const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+        const intensity = Math.floor(20 + Math.random() * 80); // 20-100 intensity
+
+        // Brightness affects visual size and glow
+        const brightness = intensity / 100;
+        const size = 3 + brightness * 7; // 3-10px
+
+        // Store current meteor data for scoring
+        this.currentPracticeMeteor = {
+            duration: duration * 1000, // convert to ms
+            intensity: intensity,
+            distance: distance,
+            startTime: Date.now()
+        };
+
+        // Create meteor element
+        const meteor = document.createElement('div');
+        meteor.className = 'practice-meteor';
+        meteor.style.cssText = `
+            position: absolute;
+            left: ${startX}px;
+            top: ${startY}px;
+            width: ${size}px;
+            height: ${size}px;
+            background: radial-gradient(circle, rgba(255, 215, 0, ${brightness}), rgba(77, 168, 255, ${brightness * 0.6}));
+            border-radius: 50%;
+            box-shadow: 0 0 ${size * 3}px rgba(255, 215, 0, ${brightness * 0.8});
+            pointer-events: none;
+            z-index: 100;
+            --meteor-dx: ${endX - startX}px;
+            --meteor-dy: ${endY - startY}px;
+            animation: meteor-fly ${duration}s linear forwards;
+        `;
+
+        // Add trail effect
+        const trail = document.createElement('div');
+        trail.style.cssText = `
+            position: absolute;
+            width: ${size * 3}px;
+            height: ${size / 2}px;
+            background: linear-gradient(to right, rgba(255, 215, 0, ${brightness * 0.6}), transparent);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            filter: blur(2px);
+        `;
+        meteor.appendChild(trail);
+
+        // Add to touch area
+        const touchArea = document.getElementById('touch-area');
+        touchArea.appendChild(meteor);
+
+        // Remove after animation
+        setTimeout(() => {
+            if (meteor.parentNode) {
+                meteor.parentNode.removeChild(meteor);
+            }
+            // Clear current meteor after it expires
+            if (this.currentPracticeMeteor &&
+                Date.now() - this.currentPracticeMeteor.startTime > duration * 1000) {
+                this.currentPracticeMeteor = null;
+            }
+        }, duration * 1000 + 100);
+
+        console.log(`Practice meteor: duration=${duration.toFixed(2)}s, intensity=${intensity}, distance=${distance.toFixed(0)}px`);
+    }
+
+    calculatePracticeScore(recordedDuration, recordedIntensity) {
+        if (!this.currentPracticeMeteor) return;
+
+        const actual = this.currentPracticeMeteor;
+
+        // Calculate accuracy percentages
+        const durationAccuracy = 100 - Math.min(100, Math.abs(recordedDuration - actual.duration) / actual.duration * 100);
+        const intensityAccuracy = 100 - Math.abs(recordedIntensity - actual.intensity);
+
+        // Overall accuracy (average of both)
+        const overallAccuracy = (durationAccuracy + intensityAccuracy) / 2;
+
+        // Update score
+        this.practiceScore.total++;
+        this.practiceScore.accuracySum += overallAccuracy;
+
+        const avgAccuracy = this.practiceScore.accuracySum / this.practiceScore.total;
+
+        // Show feedback
+        const feedback = this.createScoreFeedback(overallAccuracy, durationAccuracy, intensityAccuracy, avgAccuracy);
+        this.showPracticeScoreFeedback(feedback);
+
+        console.log(`Practice Score - Duration: ${durationAccuracy.toFixed(1)}%, Intensity: ${intensityAccuracy.toFixed(1)}%, Overall: ${overallAccuracy.toFixed(1)}%`);
+    }
+
+    createScoreFeedback(overallAccuracy, durationAccuracy, intensityAccuracy, avgAccuracy) {
+        let grade, color;
+
+        if (overallAccuracy >= 90) {
+            grade = 'Excellent!';
+            color = '#00ff88';
+        } else if (overallAccuracy >= 75) {
+            grade = 'Great!';
+            color = '#ffd700';
+        } else if (overallAccuracy >= 60) {
+            grade = 'Good';
+            color = '#4da8ff';
+        } else if (overallAccuracy >= 40) {
+            grade = 'Fair';
+            color = '#ff6ec7';
+        } else {
+            grade = 'Keep Trying';
+            color = '#ff4757';
+        }
+
+        return {
+            grade,
+            color,
+            overallAccuracy: overallAccuracy.toFixed(1),
+            durationAccuracy: durationAccuracy.toFixed(1),
+            intensityAccuracy: intensityAccuracy.toFixed(1),
+            avgAccuracy: avgAccuracy.toFixed(1),
+            total: this.practiceScore.total
+        };
+    }
+
+    showPracticeScoreFeedback(feedback) {
+        // Create feedback overlay
+        const overlay = document.createElement('div');
+        overlay.style.position = 'absolute';
+        overlay.style.top = '20px';
+        overlay.style.left = '50%';
+        overlay.style.transform = 'translateX(-50%)';
+        overlay.style.background = 'rgba(0, 0, 0, 0.9)';
+        overlay.style.border = `2px solid ${feedback.color}`;
+        overlay.style.borderRadius = '15px';
+        overlay.style.padding = '15px 25px';
+        overlay.style.zIndex = '100';
+        overlay.style.minWidth = '250px';
+        overlay.style.textAlign = 'center';
+        overlay.style.fontFamily = "'Orbitron', sans-serif";
+        overlay.style.animation = 'fadeIn 0.3s ease-out';
+        overlay.style.pointerEvents = 'none';
+
+        overlay.innerHTML = `
+            <div style="font-size: 1.5rem; color: ${feedback.color}; font-weight: 700; margin-bottom: 10px;">
+                ${feedback.grade}
+            </div>
+            <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8); margin-bottom: 8px;">
+                Overall: ${feedback.overallAccuracy}%
+            </div>
+            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6); display: flex; justify-content: space-around;">
+                <span>Duration: ${feedback.durationAccuracy}%</span>
+                <span>Brightness: ${feedback.intensityAccuracy}%</span>
+            </div>
+            <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7); margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.2);">
+                Session Average: ${feedback.avgAccuracy}% (${feedback.total} meteors)
+            </div>
+        `;
+
+        const touchArea = document.getElementById('touch-area');
+        touchArea.appendChild(overlay);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+            if (overlay.parentNode) {
+                overlay.style.opacity = '0';
+                overlay.style.transition = 'opacity 0.5s ease-out';
+                setTimeout(() => {
+                    if (overlay.parentNode) {
+                        overlay.parentNode.removeChild(overlay);
+                    }
+                }, 500);
+            }
+        }, 3000);
+    }
+
+    // ==================== Sync-related methods
 
     async updateSyncStatus() {
         try {

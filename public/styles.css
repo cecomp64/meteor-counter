@@ -594,3 +594,125 @@ body:has(#observing-screen.active) {
         padding: 6px 10px;
     }
 }
+
+/* Practice Mode Styles */
+.practice-mode-panel {
+    width: 100%;
+    background: rgba(255, 215, 0, 0.1);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.practice-mode-toggle {
+    margin-bottom: 10px;
+}
+
+.practice-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.practice-toggle-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--meteor-gold);
+}
+
+.practice-toggle-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--meteor-gold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.practice-mode-controls {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.practice-rate-label {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.practice-rate-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.practice-rate-btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    padding: 10px 18px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 20px;
+    color: var(--star-white);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.practice-rate-btn:hover {
+    background: rgba(255, 215, 0, 0.2);
+    border-color: rgba(255, 215, 0, 0.5);
+    transform: translateY(-2px);
+}
+
+.practice-rate-btn.active {
+    background: var(--meteor-gold);
+    border-color: var(--meteor-gold);
+    color: var(--cosmic-deep);
+    font-weight: 700;
+}
+
+.practice-meteor {
+    position: absolute;
+    pointer-events: none;
+    z-index: 10;
+}
+
+@keyframes meteor-fly {
+    0% {
+        opacity: 0;
+        transform: translate(0, 0) scale(0.5);
+    }
+    10% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translate(var(--meteor-dx), var(--meteor-dy)) scale(0.8);
+    }
+}
+
+@media (max-width: 768px) {
+    .practice-rate-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .practice-rate-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

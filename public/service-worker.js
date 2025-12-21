@@ -1,13 +1,13 @@
-const CACHE_NAME = 'meteor-observer-v1.0.202512201654';
+const CACHE_NAME = 'meteor-observer-v1.0.202512201709';
 const urlsToCache = [
     './',
-    './index.html?v=1.0.202512201654',
-    './styles.css?v=1.0.202512201654',
-    '../src/client/app.js?v=1.0.202512201654',
-    '../src/client/db.js?v=1.0.202512201654',
-    '../src/client/auth-service.js?v=1.0.202512201654',
-    '../src/client/sync-service.js?v=1.0.202512201654',
-    './manifest.json?v=1.0.202512201654',
+    './index.html?v=1.0.202512201709',
+    './styles.css?v=1.0.202512201709',
+    '../src/client/app.js?v=1.0.202512201709',
+    '../src/client/db.js?v=1.0.202512201709',
+    '../src/client/auth-service.js?v=1.0.202512201709',
+    '../src/client/sync-service.js?v=1.0.202512201709',
+    './manifest.json?v=1.0.202512201709',
     'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap',
     'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
     'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
