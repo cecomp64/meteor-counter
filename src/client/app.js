@@ -22,10 +22,9 @@ class MeteorObserver {
 
         // Practice mode
         this.practiceMode = false;
-        this.practiceRate = 'slow'; // slow, medium, fast
-        this.practiceMeteorTimer = null;
         this.currentPracticeMeteor = null;
         this.practiceScore = { correct: 0, total: 0, accuracySum: 0 };
+        this.waitingForNextMeteor = false;
 
         // Canvas for visual feedback
         this.canvas = null;
@@ -176,14 +175,6 @@ class MeteorObserver {
                 this.handleAuthSubmit();
             }
         });
-
-        // Practice mode rate controls
-        document.querySelectorAll('.practice-rate-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const rate = btn.dataset.rate;
-                this.setPracticeRate(rate);
-            });
-        });
     }
 
     async requestLocation() {
@@ -289,7 +280,8 @@ class MeteorObserver {
             startTime: this.sessionStartTime.toISOString(),
             location: this.location,
             observations: [],
-            notes: ''
+            notes: '',
+            isPractice: isPracticeMode
         };
 
         this.currentSession = await this.db.saveSession(session);
@@ -318,18 +310,12 @@ class MeteorObserver {
         // Setup canvas
         this.canvas = document.getElementById('visual-feedback');
         this.ctx = this.canvas.getContext('2d');
-        this.resizeCanvas();
 
         // Setup touch area listeners
         this.setupTouchArea();
 
         // Start timer
         this.startSessionTimer();
-
-        // Start practice meteors if in practice mode
-        if (isPracticeMode) {
-            this.startPracticeMeteors();
-        }
 
         // Play ascending chime to signal session start
         setTimeout(() => {
@@ -338,6 +324,17 @@ class MeteorObserver {
         }, 300);
 
         this.showScreen('observing-screen');
+
+        // Resize canvas and start practice meteors AFTER screen is shown
+        setTimeout(() => {
+            this.resizeCanvas();
+            if (isPracticeMode) {
+                // Generate first meteor after a short delay
+                setTimeout(() => {
+                    this.generatePracticeMeteor();
+                }, 1500);
+            }
+        }, 100);
     }
 
     resizeCanvas() {
@@ -405,8 +402,10 @@ class MeteorObserver {
             this.sessionTimer = null;
         }
 
-        // Stop practice mode meteors
-        this.stopPracticeMeteors();
+        // Reset practice mode state
+        this.practiceMode = false;
+        this.currentPracticeMeteor = null;
+        this.waitingForNextMeteor = false;
 
         // Remove touch area handlers
         this.removeTouchAreaHandlers();
@@ -428,25 +427,16 @@ class MeteorObserver {
         this.touchStart = Date.now();
         this.touchStartPos = { x: e.clientX, y: e.clientY };
         this.touchMovement = 0;
-        
-        // Visual feedback
-        this.drawMeteorStart(e.clientX - this.canvas.offsetLeft, e.clientY - this.canvas.offsetTop);
     }
 
     handleTouchMove(e) {
         if (!this.isRecording) return;
-        
+
         const dx = e.clientX - this.touchStartPos.x;
         const dy = e.clientY - this.touchStartPos.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
+
         this.touchMovement = Math.max(this.touchMovement, distance);
-        
-        // Visual feedback
-        this.drawMeteorTrail(
-            e.clientX - this.canvas.offsetLeft,
-            e.clientY - this.canvas.offsetTop
-        );
     }
 
     async handleTouchEnd(e) {
@@ -472,9 +462,19 @@ class MeteorObserver {
         // Calculate intensity (0-100) based on movement
         const intensity = Math.min(100, Math.round(this.touchMovement / 2));
 
-        // Practice mode scoring
-        if (this.practiceMode && this.currentPracticeMeteor) {
-            this.calculatePracticeScore(duration, intensity);
+        // Practice mode scoring and data
+        let practiceData = null;
+        if (this.practiceMode) {
+            console.log('Practice mode active, currentPracticeMeteor:', this.currentPracticeMeteor);
+            if (this.currentPracticeMeteor) {
+                practiceData = this.calculatePracticeScore(duration, intensity);
+                // Schedule next meteor after feedback fades
+                this.scheduleNextPracticeMeteor();
+            } else {
+                console.log('No current practice meteor - user recorded outside meteor window');
+                // Still schedule next meteor if user records when no meteor is active
+                this.scheduleNextPracticeMeteor();
+            }
         }
 
         // Create observation
@@ -483,7 +483,13 @@ class MeteorObserver {
             timestamp: new Date().toISOString(),
             duration: duration,
             intensity: intensity,
-            location: this.location
+            location: this.location,
+            // Practice mode fields
+            actualDuration: practiceData ? practiceData.actualDuration : null,
+            actualIntensity: practiceData ? practiceData.actualIntensity : null,
+            durationAccuracy: practiceData ? practiceData.durationAccuracy : null,
+            intensityAccuracy: practiceData ? practiceData.intensityAccuracy : null,
+            overallAccuracy: practiceData ? practiceData.overallAccuracy : null
         };
 
         // Save to database
@@ -501,9 +507,6 @@ class MeteorObserver {
         // Feedback
         this.playSound();
         this.vibrate();
-        this.drawMeteorComplete();
-
-        setTimeout(() => this.clearCanvas(), 500);
     }
 
     drawMeteorStart(x, y) {
@@ -688,20 +691,33 @@ class MeteorObserver {
             // Play descending chime to signal session stop
             this.playChime(false); // Descending pitch
 
-            // Clean up the observing session
-            this.cleanupObservingSession();
-
             const endTime = new Date();
             const duration = endTime - this.sessionStartTime;
 
             console.log('Updating session:', this.currentSession);
-            
-            // Update session in database
-            await this.db.updateSession(this.currentSession, {
+
+            // Prepare session update data
+            const sessionUpdate = {
                 endTime: endTime.toISOString(),
                 duration: duration,
                 totalObservations: this.observations.length
-            });
+            };
+
+            // Add practice stats if in practice mode (BEFORE cleanup resets practiceMode)
+            console.log('stopObserving - practiceMode:', this.practiceMode);
+            console.log('stopObserving - practiceScore:', this.practiceScore);
+            if (this.practiceMode && this.practiceScore.total > 0) {
+                sessionUpdate.practiceTotalMeteors = this.practiceScore.total;
+                sessionUpdate.practiceAvgAccuracy = this.practiceScore.accuracySum / this.practiceScore.total;
+                console.log('Adding practice stats to session update:', sessionUpdate);
+            }
+
+            // Update session in database
+            console.log('Final session update:', sessionUpdate);
+            await this.db.updateSession(this.currentSession, sessionUpdate);
+
+            // Clean up the observing session (this resets practiceMode, so must be after saving stats)
+            this.cleanupObservingSession();
             
             console.log('Session updated, showing results');
             
@@ -747,31 +763,42 @@ class MeteorObserver {
         const avgIntensity = this.observations.length > 0
             ? this.observations.reduce((sum, obs) => sum + obs.intensity, 0) / this.observations.length
             : 0;
-        
-        document.getElementById('results-summary').innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-bottom: 20px;">
-                <div>
-                    <div style="font-size: 2rem; font-family: 'Orbitron', sans-serif; color: var(--nebula-blue);">${this.observations.length}</div>
-                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.6);">Total Meteors</div>
+
+        // Display practice mode stats if this was a practice session, otherwise show regular summary
+        if (session.isPractice) {
+            // Hide regular summary for practice sessions
+            document.getElementById('session-summary-card').style.display = 'none';
+            this.displayPracticeStats(session);
+        } else {
+            // Show regular summary in charts container for non-practice sessions
+            document.getElementById('session-summary-content').innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-bottom: 15px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-family: 'Orbitron', sans-serif; color: var(--nebula-blue);">${this.observations.length}</div>
+                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.6);">Total Meteors</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-family: 'Orbitron', sans-serif; color: var(--nebula-purple);">${mph}</div>
+                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.6);">Per Hour</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-family: 'Orbitron', sans-serif; color: var(--meteor-gold);">${avgDuration.toFixed(1)}s</div>
+                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.6);">Avg Duration</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-family: 'Orbitron', sans-serif; color: var(--success-green);">${avgIntensity.toFixed(0)}</div>
+                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.6);">Avg Intensity</div>
+                    </div>
                 </div>
-                <div>
-                    <div style="font-size: 2rem; font-family: 'Orbitron', sans-serif; color: var(--nebula-purple);">${mph}</div>
-                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.6);">Per Hour</div>
+                <div style="font-size: 0.9rem; color: rgba(255,255,255,0.5); text-align: center;">
+                    Session: ${new Date(session.startTime).toLocaleTimeString()} - ${new Date(session.endTime).toLocaleTimeString()}
                 </div>
-                <div>
-                    <div style="font-size: 2rem; font-family: 'Orbitron', sans-serif; color: var(--meteor-gold);">${avgDuration.toFixed(1)}s</div>
-                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.6);">Avg Duration</div>
-                </div>
-                <div>
-                    <div style="font-size: 2rem; font-family: 'Orbitron', sans-serif; color: var(--success-green);">${avgIntensity.toFixed(0)}</div>
-                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.6);">Avg Intensity</div>
-                </div>
-            </div>
-            <div style="font-size: 0.9rem; color: rgba(255,255,255,0.5);">
-                Session: ${new Date(session.startTime).toLocaleTimeString()} - ${new Date(session.endTime).toLocaleTimeString()}
-            </div>
-        `;
-        
+            `;
+            document.getElementById('session-summary-card').style.display = 'block';
+            // Hide practice stats card
+            document.getElementById('practice-stats-card').style.display = 'none';
+        }
+
         // Only create charts if there are observations
         if (this.observations.length > 0) {
             console.log('Creating charts for', this.observations.length, 'observations');
@@ -806,6 +833,102 @@ class MeteorObserver {
         }
     }
 
+    displayPracticeStats(session) {
+        const practiceStatsCard = document.getElementById('practice-stats-card');
+        const practiceStatsContent = document.getElementById('practice-stats-content');
+
+        console.log('displayPracticeStats called with session:', session);
+        console.log('isPractice:', session.isPractice);
+        console.log('practiceTotalMeteors:', session.practiceTotalMeteors);
+        console.log('observations:', this.observations);
+
+        // Check if this was a practice session
+        if (!session.isPractice) {
+            console.log('Not a practice session, hiding card');
+            practiceStatsCard.style.display = 'none';
+            return;
+        }
+
+        // Calculate stats from observations with accuracy data
+        const practiceObservations = this.observations.filter(obs => obs.overallAccuracy !== null);
+        console.log('Practice observations with accuracy:', practiceObservations);
+
+        if (practiceObservations.length === 0) {
+            console.log('No practice observations with accuracy data, hiding card');
+            practiceStatsCard.style.display = 'none';
+            return;
+        }
+
+        // Calculate average accuracies
+        const avgOverallAccuracy = session.practiceAvgAccuracy || 0;
+        const avgDurationAccuracy = practiceObservations.reduce((sum, obs) => sum + (obs.durationAccuracy || 0), 0) / practiceObservations.length;
+        const avgIntensityAccuracy = practiceObservations.reduce((sum, obs) => sum + (obs.intensityAccuracy || 0), 0) / practiceObservations.length;
+
+        // Determine grade and color
+        let grade, color;
+        if (avgOverallAccuracy >= 90) {
+            grade = 'Excellent!';
+            color = '#00ff88';
+        } else if (avgOverallAccuracy >= 75) {
+            grade = 'Great!';
+            color = '#ffd700';
+        } else if (avgOverallAccuracy >= 60) {
+            grade = 'Good';
+            color = '#4da8ff';
+        } else if (avgOverallAccuracy >= 40) {
+            grade = 'Fair';
+            color = '#ff6ec7';
+        } else {
+            grade = 'Keep Practicing';
+            color = '#ff4757';
+        }
+
+        // Display practice stats
+        practiceStatsContent.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-bottom: 15px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 2.5rem; font-family: 'Orbitron', sans-serif; color: ${color};">${avgOverallAccuracy.toFixed(1)}%</div>
+                    <div style="font-size: 1.1rem; color: ${color}; font-weight: bold; margin-top: 5px;">${grade}</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.5); margin-top: 3px;">Overall Accuracy</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-family: 'Orbitron', sans-serif; color: var(--meteor-gold);">${avgDurationAccuracy.toFixed(1)}%</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 5px;">Duration Accuracy</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-family: 'Orbitron', sans-serif; color: var(--nebula-blue);">${avgIntensityAccuracy.toFixed(1)}%</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 5px;">Brightness Accuracy</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-family: 'Orbitron', sans-serif; color: var(--nebula-purple);">${practiceObservations.length}</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 5px;">Meteors Attempted</div>
+                </div>
+            </div>
+            <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; border-left: 3px solid ${color};">
+                <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-bottom: 10px;">
+                    <strong>Individual Meteor Results:</strong>
+                </div>
+                <div style="display: grid; gap: 8px; max-height: 200px; overflow-y: auto;">
+                    ${practiceObservations.map((obs, idx) => {
+                        const obsColor = obs.overallAccuracy >= 75 ? '#00ff88' : obs.overallAccuracy >= 60 ? '#ffd700' : obs.overallAccuracy >= 40 ? '#4da8ff' : '#ff6ec7';
+                        return `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 5px;">
+                                <span style="color: rgba(255,255,255,0.6); font-size: 0.85rem;">Meteor ${idx + 1}</span>
+                                <div style="display: flex; gap: 15px; font-size: 0.85rem;">
+                                    <span style="color: ${obsColor};">${obs.overallAccuracy.toFixed(1)}% overall</span>
+                                    <span style="color: rgba(255,255,255,0.5);">Duration: ${obs.durationAccuracy.toFixed(0)}%</span>
+                                    <span style="color: rgba(255,255,255,0.5);">Brightness: ${obs.intensityAccuracy.toFixed(0)}%</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+
+        practiceStatsCard.style.display = 'block';
+    }
+
     createCharts() {
         // First ensure the charts container has the proper structure
         this.ensureChartsStructure();
@@ -831,10 +954,14 @@ class MeteorObserver {
     
     ensureChartsStructure() {
         const chartsContainer = document.querySelector('.charts-container');
-        
+
         // Check if we need to restore the structure (e.g., after showing "no observations" message)
         if (!chartsContainer.querySelector('#timeline-chart')) {
             chartsContainer.innerHTML = `
+                <div class="chart-card" id="session-summary-card" style="display: none;">
+                    <h3><i class="bi bi-graph-up"></i> Session Summary</h3>
+                    <div id="session-summary-content"></div>
+                </div>
                 <div class="chart-card">
                     <h3>Meteor Timeline</h3>
                     <canvas id="timeline-chart"></canvas>
@@ -883,6 +1010,7 @@ class MeteorObserver {
                 responsive: true,
                 maintainAspectRatio: true,
                 aspectRatio: window.innerWidth <= 768 ? 1.2 : 2,
+                //aspectRatio: window.innerWidth <= 768 ? ( window.innerWidth <= 500 ? 0.8 : 1.2) : 2,
                 animation: {
                     duration: 0 // Disable animation for faster rendering
                 },
@@ -1267,7 +1395,15 @@ class MeteorObserver {
                 pdf.text(`Location: ${session.location.latitude.toFixed(4)}°, ${session.location.longitude.toFixed(4)}°`, 15, yPos);
                 yPos += 5;
             }
-            
+
+            // Add session notes if they exist
+            if (session.notes && session.notes.trim()) {
+                pdf.text(`Notes: ${session.notes}`, 15, yPos, { maxWidth: pageWidth - 30 });
+                // Calculate how many lines the notes took (approximate)
+                const lines = Math.ceil(session.notes.length / 80); // rough estimate
+                yPos += 5 * lines;
+            }
+
             yPos += 5;
             
             // Statistics boxes
@@ -1308,54 +1444,119 @@ class MeteorObserver {
                 pdf.text(stat.label, x + boxWidth / 2, boxY + 19, { align: 'center' });
             });
             
-            yPos = boxY + boxHeight + 10;
-            
+            yPos = boxY + boxHeight + 15;
+
             // Only add charts if there are observations
             if (this.observations.length > 0) {
                 // Wait for charts to fully render
                 await new Promise(resolve => setTimeout(resolve, 500));
-                
+
                 // Capture charts as images
                 const charts = [
                     { id: 'timeline-chart', title: 'Meteor Timeline' },
                     { id: 'brightness-chart', title: 'Brightness Distribution' },
                     { id: 'duration-chart', title: 'Duration Analysis' }
                 ];
-                
-                for (let i = 0; i < charts.length; i++) {
-                    const chart = charts[i];
-                    const chartInstance = Chart.getChart(chart.id);
-                    
-                    if (chartInstance) {
+
+                // Add first chart on the first page (below session stats)
+                const firstChart = charts[0];
+                const firstChartInstance = Chart.getChart(firstChart.id);
+
+                if (firstChartInstance) {
+                    // Force chart to finish rendering
+                    firstChartInstance.update();
+                    await new Promise(resolve => setTimeout(resolve, 200));
+
+                    // Chart title
+                    pdf.setTextColor(77, 168, 255);
+                    pdf.setFontSize(14);
+                    pdf.setFont(undefined, 'bold');
+                    pdf.text(firstChart.title, pageWidth / 2, yPos, { align: 'center' });
+                    yPos += 10;
+
+                    // Get canvas and convert to image
+                    const canvas = firstChartInstance.canvas;
+                    const imgData = canvas.toDataURL('image/png', 1.0);
+                    const imgWidth = pageWidth - 30;
+                    const imgHeight = (canvas.height / canvas.width) * imgWidth;
+
+                    // Add white background behind chart
+                    pdf.setFillColor(255, 255, 255);
+                    pdf.roundedRect(15, yPos, imgWidth, imgHeight, 3, 3, 'F');
+
+                    // Add chart image
+                    pdf.addImage(imgData, 'PNG', 15, yPos, imgWidth, imgHeight);
+                }
+
+                // Process remaining charts in pairs (2 per page)
+                for (let i = 1; i < charts.length; i += 2) {
+                    // Add new page for each pair of charts
+                    pdf.addPage();
+                    addStarryBackground();
+                    yPos = 20;
+
+                    // First chart of the pair
+                    const chart1 = charts[i];
+                    const chartInstance1 = Chart.getChart(chart1.id);
+
+                    if (chartInstance1) {
                         // Force chart to finish rendering
-                        chartInstance.update();
+                        chartInstance1.update();
                         await new Promise(resolve => setTimeout(resolve, 200));
-                        
-                        // Add new page for each chart
-                        pdf.addPage();
-                        addStarryBackground();
-                        yPos = 20;
-                        
+
                         // Chart title
                         pdf.setTextColor(77, 168, 255);
                         pdf.setFontSize(14);
                         pdf.setFont(undefined, 'bold');
-                        pdf.text(chart.title, pageWidth / 2, yPos, { align: 'center' });
+                        pdf.text(chart1.title, pageWidth / 2, yPos, { align: 'center' });
                         yPos += 10;
-                        
+
                         // Get canvas and convert to image
-                        const canvas = chartInstance.canvas;
-                        const imgData = canvas.toDataURL('image/png', 1.0);
-                        const imgWidth = pageWidth - 30;
-                        const imgHeight = (canvas.height / canvas.width) * imgWidth;
-                        
+                        const canvas1 = chartInstance1.canvas;
+                        const imgData1 = canvas1.toDataURL('image/png', 1.0);
+                        const imgWidth1 = pageWidth - 30;
+                        const imgHeight1 = (canvas1.height / canvas1.width) * imgWidth1;
+
                         // Add white background behind chart
                         pdf.setFillColor(255, 255, 255);
-                        pdf.roundedRect(15, yPos, imgWidth, imgHeight, 3, 3, 'F');
-                        
+                        pdf.roundedRect(15, yPos, imgWidth1, imgHeight1, 3, 3, 'F');
+
                         // Add chart image
-                        pdf.addImage(imgData, 'PNG', 15, yPos, imgWidth, imgHeight);
-                        yPos += imgHeight;
+                        pdf.addImage(imgData1, 'PNG', 15, yPos, imgWidth1, imgHeight1);
+                        yPos += imgHeight1 + 15; // Add spacing between charts
+                    }
+
+                    // Second chart of the pair (if it exists)
+                    if (i + 1 < charts.length) {
+                        const chart2 = charts[i + 1];
+                        const chartInstance2 = Chart.getChart(chart2.id);
+
+                        if (chartInstance2) {
+                            // Force chart to finish rendering
+                            chartInstance2.update();
+                            await new Promise(resolve => setTimeout(resolve, 200));
+
+                            // Chart title
+                            pdf.setTextColor(77, 168, 255);
+                            pdf.setFontSize(14);
+                            pdf.setFont(undefined, 'bold');
+                            pdf.text(chart2.title, pageWidth / 2, yPos, { align: 'center' });
+                            yPos += 10;
+
+                            // Get canvas and convert to image
+                            const canvas2 = chartInstance2.canvas;
+                            const imgData2 = canvas2.toDataURL('image/png', 1.0);
+                            const imgWidth2 = pageWidth - 30;
+                            const imgHeight2 = (canvas2.height / canvas2.width) * imgWidth2;
+
+                            // Add white background behind chart
+                            pdf.setFillColor(255, 255, 255);
+                            pdf.roundedRect(15, yPos, imgWidth2, imgHeight2, 3, 3, 'F');
+
+                            // Add chart image
+                            pdf.addImage(imgData2, 'PNG', 15, yPos, imgWidth2, imgHeight2);
+                            yPos += imgHeight2;
+                        }
                     }
                 }
             }
@@ -1363,7 +1564,7 @@ class MeteorObserver {
             // Footer on last page
             pdf.setTextColor(100, 100, 100);
             pdf.setFontSize(8);
-            pdf.text('Generated by Meteor Observer v1.0.202512201709', pageWidth / 2, pageHeight - 10, { align: 'center' });
+            pdf.text('Generated by Meteor Observer v1.0.202512202145', pageWidth / 2, pageHeight - 10, { align: 'center' });
             pdf.text(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, pageHeight - 6, { align: 'center' });
             
             // Save PDF
@@ -1552,57 +1753,27 @@ class MeteorObserver {
 
     // ==================== Practice Mode Methods ====================
 
-    setPracticeRate(rate) {
-        this.practiceRate = rate;
+    scheduleNextPracticeMeteor() {
+        if (!this.practiceMode || this.waitingForNextMeteor) return;
 
-        // Update button states
-        document.querySelectorAll('.practice-rate-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.rate === rate);
-        });
+        this.waitingForNextMeteor = true;
 
-        // Restart meteor generation with new rate
-        if (this.practiceMode) {
-            this.stopPracticeMeteors();
-            this.startPracticeMeteors();
-        }
+        // Wait for feedback to fade (3s) + random delay (1-3s)
+        const delay = 3000 + 1000 + Math.random() * 2000;
 
-        console.log('Practice rate set to:', rate);
-    }
-
-    startPracticeMeteors() {
-        // Clear any existing timer
-        this.stopPracticeMeteors();
-
-        // Define intervals in milliseconds
-        const intervals = {
-            slow: 15000,    // ~1 every 15 seconds
-            medium: 10000,  // ~1 every 10 seconds
-            fast: 5000      // ~1 every 5 seconds
-        };
-
-        const interval = intervals[this.practiceRate] || intervals.slow;
-
-        // Schedule first meteor with a slight delay
         setTimeout(() => {
-            this.generatePracticeMeteor();
-
-            // Then schedule recurring meteors with some randomness
-            this.practiceMeteorTimer = setInterval(() => {
+            this.waitingForNextMeteor = false;
+            if (this.practiceMode) {
                 this.generatePracticeMeteor();
-            }, interval);
-        }, 1000);
-    }
-
-    stopPracticeMeteors() {
-        if (this.practiceMeteorTimer) {
-            clearInterval(this.practiceMeteorTimer);
-            this.practiceMeteorTimer = null;
-        }
-        this.currentPracticeMeteor = null;
+            }
+        }, delay);
     }
 
     generatePracticeMeteor() {
         if (!this.practiceMode || !this.canvas) return;
+
+        // Clear previous meteor data now that we're generating a new one
+        this.currentPracticeMeteor = null;
 
         // Random starting position (from edges)
         const startSide = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
@@ -1648,6 +1819,8 @@ class MeteorObserver {
         const duration = 0.5 + Math.random() * 2; // 0.5 to 2.5 seconds
         const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
         const intensity = Math.floor(20 + Math.random() * 80); // 20-100 intensity
+
+        console.log(`Start: (${startX}, ${startY}), End: (${endX}, ${endY}), Distance: ${distance}`);
 
         // Brightness affects visual size and glow
         const brightness = intensity / 100;
@@ -1699,15 +1872,10 @@ class MeteorObserver {
         const touchArea = document.getElementById('touch-area');
         touchArea.appendChild(meteor);
 
-        // Remove after animation
+        // Remove meteor element after animation
         setTimeout(() => {
             if (meteor.parentNode) {
                 meteor.parentNode.removeChild(meteor);
-            }
-            // Clear current meteor after it expires
-            if (this.currentPracticeMeteor &&
-                Date.now() - this.currentPracticeMeteor.startTime > duration * 1000) {
-                this.currentPracticeMeteor = null;
             }
         }, duration * 1000 + 100);
 
@@ -1715,9 +1883,13 @@ class MeteorObserver {
     }
 
     calculatePracticeScore(recordedDuration, recordedIntensity) {
-        if (!this.currentPracticeMeteor) return;
+        if (!this.currentPracticeMeteor) {
+            console.log('calculatePracticeScore: No current meteor');
+            return null;
+        }
 
         const actual = this.currentPracticeMeteor;
+        console.log(`Calculating score - Recorded: ${recordedDuration}ms/${recordedIntensity}, Actual: ${actual.duration}ms/${actual.intensity}`);
 
         // Calculate accuracy percentages
         const durationAccuracy = 100 - Math.min(100, Math.abs(recordedDuration - actual.duration) / actual.duration * 100);
@@ -1732,11 +1904,21 @@ class MeteorObserver {
 
         const avgAccuracy = this.practiceScore.accuracySum / this.practiceScore.total;
 
+        console.log(`Accuracies - Duration: ${durationAccuracy.toFixed(1)}%, Intensity: ${intensityAccuracy.toFixed(1)}%, Overall: ${overallAccuracy.toFixed(1)}%`);
+
         // Show feedback
         const feedback = this.createScoreFeedback(overallAccuracy, durationAccuracy, intensityAccuracy, avgAccuracy);
+        console.log('Showing feedback:', feedback);
         this.showPracticeScoreFeedback(feedback);
 
-        console.log(`Practice Score - Duration: ${durationAccuracy.toFixed(1)}%, Intensity: ${intensityAccuracy.toFixed(1)}%, Overall: ${overallAccuracy.toFixed(1)}%`);
+        // Return practice data for storage
+        return {
+            actualDuration: actual.duration,
+            actualIntensity: actual.intensity,
+            durationAccuracy: durationAccuracy,
+            intensityAccuracy: intensityAccuracy,
+            overallAccuracy: overallAccuracy
+        };
     }
 
     createScoreFeedback(overallAccuracy, durationAccuracy, intensityAccuracy, avgAccuracy) {

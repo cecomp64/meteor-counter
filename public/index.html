@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0e27">
     <title>Meteor Observer</title>
-    <link rel="manifest" href="manifest.json?v=1.0.202512201709">
-    <link rel="stylesheet" href="styles.css?v=1.0.202512201709">
+    <link rel="manifest" href="manifest.json?v=1.0.202512202145">
+    <link rel="stylesheet" href="styles.css?v=1.0.202512202145">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@
     <div class="stars3"></div>
     
     <!-- Version indicator - always visible -->
-    <div class="version-indicator">v1.0.202512201709</div>
+    <div class="version-indicator">v1.0.202512202145</div>
     
     <div id="app" class="container">
         <!-- Location Request Screen -->
@@ -47,12 +47,12 @@
             </button>
             <p class="info-text">Location helps calculate local meteor rates</p>
         </div>
-
+        
         <!-- Ready Screen -->
         <div id="ready-screen" class="screen">
             <div class="status-badge">Ready</div>
             <div class="location-info" id="location-display"></div>
-
+            
             <!-- Sync Status Indicator -->
             <div id="sync-status" class="sync-status" style="margin: 15px auto; padding: 10px; background: rgba(77, 168, 255, 0.1); border: 1px solid rgba(77, 168, 255, 0.3); border-radius: 8px; max-width: 400px; display: none;">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -69,7 +69,7 @@
                     </button>
                 </div>
             </div>
-
+            
             <h2 class="section-title">Begin Observation</h2>
             <p class="instruction-text">
                 Press and hold anywhere on screen to record a meteor.<br>
@@ -77,8 +77,8 @@
                 Movement = brightness
             </p>
             <p class="instruction-text">
-              Be sure to turn your device off slient mode. <br/>
-              Refresh for latest updates. <br/>
+                Be sure to turn your device off slient mode. <br/>
+                Refresh for latest updates. <br/>
             </p>
             <button id="start-observing-btn" class="primary-btn large">
                 <i class="bi bi-stars btn-icon"></i>
@@ -97,7 +97,7 @@
                 Sync Settings
             </button>
         </div>
-
+        
         <!-- Observing Screen -->
         <div id="observing-screen" class="screen">
             <div class="obs-header">
@@ -124,23 +124,18 @@
                     </div>
                 </div>
             </div>
-
+            
             <!-- Practice Mode Controls -->
             <div class="practice-mode-panel" id="practice-mode-panel" style="display: none;">
-                <div class="practice-rate-label">Meteor Rate:</div>
-                <div class="practice-rate-buttons">
-                    <button class="practice-rate-btn active" data-rate="slow">
-                        <i class="bi bi-speedometer"></i> Slow
-                    </button>
-                    <button class="practice-rate-btn" data-rate="medium">
-                        <i class="bi bi-speedometer2"></i> Medium
-                    </button>
-                    <button class="practice-rate-btn" data-rate="fast">
-                        <i class="bi bi-lightning-fill"></i> Fast
-                    </button>
+                <div class="practice-rate-label">
+                    <i class="bi bi-mortarboard-fill"></i> Practice Mode Active
+                </div>
+                <div class="practice-instructions">
+                    Watch for meteors and record them!<br>
+                    A new meteor appears after each attempt.
                 </div>
             </div>
-
+            
             <div id="touch-area" class="touch-area">
                 <div class="touch-instructions">
                     <span class="pulse-indicator"></span>
@@ -149,7 +144,7 @@
                 <canvas id="visual-feedback"></canvas>
             </div>
         </div>
-
+        
         <!-- Past Sessions Screen -->
         <div id="past-sessions-screen" class="screen">
             <h2 class="section-title">Past Observations</h2>
@@ -161,17 +156,17 @@
                 Back
             </button>
         </div>
-
+        
         <!-- Sync Settings Screen -->
         <div id="sync-settings-screen" class="screen">
             <h2 class="section-title">Sync Settings</h2>
-
+            
             <div class="chart-card" style="margin-bottom: 20px; text-align: left;">
                 <h3><i class="bi bi-shield-lock"></i> Location Privacy</h3>
                 <p style="font-size: 0.9rem; color: rgba(255,255,255,0.6); margin-bottom: 15px;">
                     Control how your location data is shared when syncing to the central database.
                 </p>
-
+                
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 10px; cursor: pointer;">
                         <input type="radio" name="location-privacy" value="full" checked style="margin-right: 8px;">
@@ -181,7 +176,7 @@
                         </span>
                     </label>
                 </div>
-
+                
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 10px; cursor: pointer;">
                         <input type="radio" name="location-privacy" value="obfuscated" style="margin-right: 8px;">
@@ -191,7 +186,7 @@
                         </span>
                     </label>
                 </div>
-
+                
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 10px; cursor: pointer;">
                         <input type="radio" name="location-privacy" value="hidden" style="margin-right: 8px;">
@@ -202,7 +197,7 @@
                     </label>
                 </div>
             </div>
-
+            
             <div class="chart-card" style="margin-bottom: 20px; text-align: left;">
                 <h3><i class="bi bi-person-circle"></i> Account</h3>
                 <div id="auth-status-display" style="font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-bottom: 15px;">
@@ -214,7 +209,7 @@
                     <span id="auth-action-text">Sign In / Sign Up</span>
                 </button>
             </div>
-
+            
             <div class="chart-card" style="margin-bottom: 20px; text-align: left;">
                 <h3><i class="bi bi-info-circle"></i> Sync Status</h3>
                 <div id="sync-settings-status" style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">
@@ -222,7 +217,7 @@
                     <p id="unsynced-count">Checking for unsynced data...</p>
                 </div>
             </div>
-
+            
             <div class="action-buttons">
                 <button id="sync-all-btn" class="primary-btn">
                     <i class="bi bi-cloud-upload btn-icon"></i>
@@ -234,30 +229,30 @@
                 </button>
             </div>
         </div>
-
+        
         <!-- Auth Screen (Login/Signup) -->
         <div id="auth-screen" class="screen">
             <h2 class="section-title" id="auth-screen-title">Sign In</h2>
-
+            
             <div class="chart-card" style="margin-bottom: 20px; text-align: left;">
                 <p style="font-size: 0.9rem; color: rgba(255,255,255,0.6); margin-bottom: 15px;">
                     Create an account to sync your observations across all your devices.
                 </p>
-
+                
                 <div id="auth-error" style="display: none; padding: 10px; background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.3); border-radius: 8px; color: #ff4d4d; margin-bottom: 15px; font-size: 0.9rem;"></div>
-
+                
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 5px; color: rgba(255,255,255,0.8);">Email</label>
                     <input type="email" id="auth-email" placeholder="your@email.com" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(77, 168, 255, 0.3); border-radius: 8px; color: #fff; font-family: 'Space Mono', monospace; font-size: 0.9rem; box-sizing: border-box;">
                 </div>
-
+                
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 5px; color: rgba(255,255,255,0.8);">Password</label>
                     <input type="password" id="auth-password" placeholder="••••••••" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(77, 168, 255, 0.3); border-radius: 8px; color: #fff; font-family: 'Space Mono', monospace; font-size: 0.9rem; box-sizing: border-box;">
                     <small style="font-size: 0.75rem; color: rgba(255,255,255,0.5); display: block; margin-top: 5px;" id="password-hint">At least 8 characters</small>
                 </div>
             </div>
-
+            
             <div class="action-buttons">
                 <button id="auth-submit-btn" class="primary-btn">
                     <i class="bi bi-box-arrow-in-right btn-icon"></i>
@@ -272,11 +267,11 @@
                 </button>
             </div>
         </div>
-
+        
         <!-- Account Screen (for logged in users) -->
         <div id="account-screen" class="screen">
             <h2 class="section-title">Account</h2>
-
+            
             <div class="chart-card" style="margin-bottom: 20px; text-align: left;">
                 <h3><i class="bi bi-person-circle"></i> User Information</h3>
                 <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-top: 15px;">
@@ -285,7 +280,7 @@
                     <p><strong>Last Login:</strong> <span id="account-last-login"></span></p>
                 </div>
             </div>
-
+            
             <div class="chart-card" style="margin-bottom: 20px; text-align: left;">
                 <h3><i class="bi bi-cloud-check"></i> Sync Benefits</h3>
                 <p style="font-size: 0.9rem; color: rgba(255,255,255,0.6);">
@@ -294,7 +289,7 @@
                     <i class="bi bi-check-circle" style="color: #4da8ff;"></i> Cross-device synchronization
                 </p>
             </div>
-
+            
             <div class="action-buttons">
                 <button id="logout-btn" class="primary-btn">
                     <i class="bi bi-box-arrow-right btn-icon"></i>
@@ -306,26 +301,36 @@
                 </button>
             </div>
         </div>
-
+        
         <!-- Results Screen -->
         <div id="results-screen" class="screen">
             <h2 class="section-title">Observation Complete</h2>
-            <div class="results-summary" id="results-summary"></div>
+            
+            <div class="charts-container">
+                <!-- Practice Mode Stats Card -->
+                <div class="chart-card" id="practice-stats-card" style="margin-bottom: 20px; display: none;">
+                    <h3><i class="bi bi-mortarboard-fill"></i> Practice Mode Results</h3>
+                    <div id="practice-stats-content"></div>
+                </div>
+                
+                <!-- Summary card for regular sessions (added dynamically) -->
+                <div class="chart-card" id="session-summary-card" style="display: none;">
+                    <h3><i class="bi bi-graph-up"></i> Session Summary</h3>
+                    <div id="session-summary-content"></div>
+                </div>
 
-            <div class="chart-card" style="margin-bottom: 20px; width: 100%;">
-                <h3><i class="bi bi-journal-text"></i> Session Notes</h3>
-                <textarea
+                <div class="chart-card" style="margin-bottom: 20px;">
+                    <h3><i class="bi bi-journal-text"></i> Session Notes</h3>
+                    <textarea
                     id="session-notes"
                     placeholder="Add notes about this observation session (weather conditions, location details, meteor shower name, etc.)"
                     style="width: 100%; min-height: 100px; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(77, 168, 255, 0.3); border-radius: 8px; color: #fff; font-family: 'Space Mono', monospace; font-size: 0.9rem; resize: vertical; box-sizing: border-box;"
-                ></textarea>
-                <button id="save-notes-btn" class="secondary-btn" style="margin-top: 10px;">
-                    <i class="bi bi-save btn-icon"></i>
-                    Save Notes
-                </button>
-            </div>
-
-            <div class="charts-container">
+                    ></textarea>
+                    <button id="save-notes-btn" class="secondary-btn" style="margin-top: 10px;">
+                        <i class="bi bi-save btn-icon"></i>
+                        Save Notes
+                    </button>
+                </div>
                 <div class="chart-card">
                     <h3>Meteor Timeline</h3>
                     <canvas id="timeline-chart"></canvas>
@@ -339,7 +344,7 @@
                     <canvas id="duration-chart"></canvas>
                 </div>
             </div>
-
+            
             <div class="action-buttons">
                 <button id="back-to-sessions-btn" class="secondary-btn" style="display: none;">
                     <i class="bi bi-arrow-left btn-icon"></i>
@@ -360,13 +365,13 @@
             </div>
         </div>
     </div>
-
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="../src/client/db.js?v=1.0.202512201709"></script>
-    <script src="../src/client/auth-service.js?v=1.0.202512201709"></script>
-    <script src="../src/client/sync-service.js?v=1.0.202512201709"></script>
-    <script src="../src/client/app.js?v=1.0.202512201709"></script>
+    <script src="../src/client/db.js?v=1.0.202512202145"></script>
+    <script src="../src/client/auth-service.js?v=1.0.202512202145"></script>
+    <script src="../src/client/sync-service.js?v=1.0.202512202145"></script>
+    <script src="../src/client/app.js?v=1.0.202512202145"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 class MeteorDB {
     constructor() {
         this.dbName = 'MeteorObserverDB';
-        this.version = 2; // Increased for sync fields
+        this.version = 3; // Increased for practice mode fields
         this.db = null;
     }
 
@@ -60,6 +60,13 @@ class MeteorDB {
                 if (!sessionStore.indexNames.contains('syncStatus')) {
                     sessionStore.createIndex('syncStatus', 'syncStatus', { unique: false });
                 }
+
+                // Version 3: Add practice mode indexes
+                if (event.oldVersion < 3) {
+                    if (!sessionStore.indexNames.contains('isPractice')) {
+                        sessionStore.createIndex('isPractice', 'isPractice', { unique: false });
+                    }
+                }
             };
         });
     }
@@ -69,12 +76,17 @@ class MeteorDB {
             const transaction = this.db.transaction(['observations'], 'readwrite');
             const store = transaction.objectStore('observations');
 
-            // Add sync tracking fields if not present
+            // Add sync tracking fields and practice mode fields if not present
             const obsWithSync = {
                 ...observation,
                 remoteId: observation.remoteId || null,
                 syncStatus: observation.syncStatus || 'unsynced', // 'unsynced', 'synced', 'modified'
-                lastSyncedAt: observation.lastSyncedAt || null
+                lastSyncedAt: observation.lastSyncedAt || null,
+                actualDuration: observation.actualDuration || null,
+                actualIntensity: observation.actualIntensity || null,
+                durationAccuracy: observation.durationAccuracy || null,
+                intensityAccuracy: observation.intensityAccuracy || null,
+                overallAccuracy: observation.overallAccuracy || null
             };
 
             const request = store.add(obsWithSync);
@@ -89,13 +101,16 @@ class MeteorDB {
             const transaction = this.db.transaction(['sessions'], 'readwrite');
             const store = transaction.objectStore('sessions');
 
-            // Add sync tracking fields if not present
+            // Add sync tracking fields and practice mode fields if not present
             const sessionWithSync = {
                 ...session,
                 remoteId: session.remoteId || null,
                 syncStatus: session.syncStatus || 'unsynced', // 'unsynced', 'synced', 'modified'
                 lastSyncedAt: session.lastSyncedAt || null,
-                locationPrivacy: session.locationPrivacy || 'full' // 'full', 'obfuscated', 'hidden'
+                locationPrivacy: session.locationPrivacy || 'full', // 'full', 'obfuscated', 'hidden'
+                isPractice: session.isPractice || false,
+                practiceTotalMeteors: session.practiceTotalMeteors || null,
+                practiceAvgAccuracy: session.practiceAvgAccuracy || null
             };
 
             const request = store.add(sessionWithSync);
