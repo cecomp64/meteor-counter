@@ -349,8 +349,8 @@ class SyncService {
                         remoteId: sessionDetails.id,
                         startTime: sessionDetails.start_time,
                         endTime: sessionDetails.end_time,
-                        duration: sessionDetails.duration,
-                        totalObservations: sessionDetails.total_observations,
+                        duration: Number(sessionDetails.duration), // Convert from string to number
+                        totalObservations: Number(sessionDetails.total_observations), // Convert from string to number
                         notes: sessionDetails.notes || '',
                         location: sessionDetails.location ? {
                             latitude: sessionDetails.location.latitude,
@@ -380,8 +380,8 @@ class SyncService {
                                 sessionId: localSessionId,
                                 remoteId: remoteObs.id,
                                 timestamp: remoteObs.timestamp,
-                                duration: remoteObs.duration,
-                                intensity: remoteObs.intensity,
+                                duration: Number(remoteObs.duration), // Convert from string to number
+                                intensity: Number(remoteObs.intensity), // Convert from string to number
                                 location: remoteObs.location ? {
                                     latitude: remoteObs.location.latitude,
                                     longitude: remoteObs.location.longitude,

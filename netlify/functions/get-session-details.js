@@ -69,11 +69,24 @@ exports.handler = async (event) => {
             ORDER BY timestamp ASC
         `;
 
+        // Transform observations to match client-expected format
+        const transformedObservations = observations.map(obs => ({
+            id: obs.id,
+            timestamp: obs.timestamp,
+            duration: obs.duration,
+            intensity: obs.intensity,
+            location: (obs.location_latitude !== null && obs.location_longitude !== null) ? {
+                latitude: obs.location_latitude,
+                longitude: obs.location_longitude
+            } : null,
+            created_at: obs.created_at
+        }));
+
         return createResponse(200, {
             success: true,
             session: {
                 ...session,
-                observations: observations
+                observations: transformedObservations
             }
         });
 
