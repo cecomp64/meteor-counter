@@ -1,6 +1,6 @@
 # Meteor Observer 🌠
 
-**Version 1.0.202512201601**
+**Version 1.0.202512201621**
 
 A Progressive Web App (PWA) for tracking meteor shower observations with precision timing, brightness analysis, and offline capability.
 
@@ -16,7 +16,7 @@ A Progressive Web App (PWA) for tracking meteor shower observations with precisi
 
 ### Data & Analysis
 - **IndexedDB storage**: All observations saved locally in the browser
-- **Remote database sync**: Optional cloud backup to Neon PostgreSQL (see [SYNC_SETUP.md](SYNC_SETUP.md))
+- **Remote database sync**: Optional cloud backup to Neon PostgreSQL (see [docs/SYNC_SETUP.md](docs/SYNC_SETUP.md))
 - **Session management**: Track multiple observation sessions
 - **Past sessions viewer**: Browse and review all your previous observations
 - **Interactive charts**: Timeline, brightness distribution, and duration analysis
@@ -87,14 +87,14 @@ This installs a pre-commit hook that automatically:
 - Ensures every commit has a unique timestamp-based version
 
 The version files updated are:
-- `index.html`, `manifest.json`, `service-worker.js`, `README.md`, `app.js`, `package.json`
+- `public/index.html`, `public/manifest.json`, `public/service-worker.js`, `README.md`, `src/client/app.js`, `package.json`
 
 You can also manually update the version at any time:
 ```bash
-./update-version.sh
+./scripts/update-version.sh
 ```
 
-For full local development setup including database sync, see [LOCAL_DEV_SETUP.md](LOCAL_DEV_SETUP.md).
+For full local development setup including database sync, see [docs/LOCAL_DEV_SETUP.md](docs/LOCAL_DEV_SETUP.md).
 
 ## Deployment
 
@@ -102,7 +102,7 @@ For full local development setup including database sync, see [LOCAL_DEV_SETUP.m
 
 This app can be hosted on any static hosting platform. Here are the most popular options:
 
-> **Note:** For remote database sync functionality, Netlify is required (or another platform supporting serverless functions). See [SYNC_SETUP.md](SYNC_SETUP.md) for details.
+> **Note:** For remote database sync functionality, Netlify is required (or another platform supporting serverless functions). See [docs/SYNC_SETUP.md](docs/SYNC_SETUP.md) for details.
 
 ### Option 1: Netlify (Recommended)
 
@@ -165,24 +165,41 @@ vercel --prod
 
 ```
 meteor-observer/
-├── index.html              # Main HTML structure
-├── styles.css              # Cosmic-themed styling with animations
-├── app.js                  # Core application logic
-├── db.js                   # IndexedDB wrapper for data storage
-├── sync-service.js         # Remote sync service
-├── service-worker.js       # Offline caching and PWA functionality
-├── manifest.json           # PWA configuration
-├── schema.sql              # Remote database schema (PostgreSQL)
-├── netlify.toml            # Netlify configuration
-├── package.json            # Dependencies for backend functions
-├── netlify/functions/      # Serverless API endpoints
-│   ├── db-utils.js         # Database connection utilities
-│   ├── sync-session.js     # Session sync endpoint
-│   ├── get-sessions.js     # Retrieve sessions endpoint
-│   └── get-session-details.js  # Session details endpoint
-├── README.md               # This file
-├── SYNC_SETUP.md           # Remote sync setup guide (production)
-└── LOCAL_DEV_SETUP.md      # Local development setup guide
+├── public/                 # Static assets
+│   ├── index.html         # Main HTML structure
+│   ├── styles.css         # Cosmic-themed styling with animations
+│   ├── manifest.json      # PWA configuration
+│   └── service-worker.js  # Offline caching and PWA functionality
+├── src/
+│   ├── client/            # Client-side JavaScript
+│   │   ├── app.js        # Core application logic
+│   │   ├── db.js         # IndexedDB wrapper for data storage
+│   │   ├── auth-service.js  # Authentication service
+│   │   └── sync-service.js  # Remote sync service
+│   ├── server/            # Development servers
+│   │   ├── server.js     # Static file server
+│   │   ├── proxy.js      # TCP proxy
+│   │   └── function-server.js  # Netlify functions server
+│   └── database/
+│       └── schema.sql     # PostgreSQL database schema
+├── scripts/               # Shell scripts
+│   ├── start-dev.sh      # Start development environment
+│   └── update-version.sh # Version management
+├── docs/                  # Documentation
+│   ├── LOCAL_DEV_SETUP.md # Local development guide
+│   ├── SYNC_SETUP.md     # Remote sync setup guide
+│   └── MIGRATIONS.md     # Database migrations guide
+├── netlify/
+│   └── functions/        # Serverless API endpoints
+│       ├── db-utils.js   # Database connection utilities
+│       ├── sync-session.js  # Session sync endpoint
+│       ├── get-sessions.js  # Retrieve sessions endpoint
+│       └── get-session-details.js  # Session details endpoint
+├── netlify.toml          # Netlify configuration
+├── package.json          # Dependencies
+├── CLAUDE.md             # AI assistant instructions
+├── STRUCTURE.md          # Repository structure guide
+└── README.md             # This file
 ```
 
 ## Technical Details
@@ -241,20 +258,20 @@ The app uses a Service Worker to cache all resources:
 **Quick Method (Unix/Mac/Linux):**
 Run the included script:
 ```bash
-./update-version.sh
+./scripts/update-version.sh
 ```
 
 This automatically updates the version to `1.0.[current-timestamp]` in all necessary files.
 
 **Manual Method:**
 When making updates to the app, update the version in these files:
-1. **index.html** - Update the version indicator text AND all query parameters (`?v=...`) on:
+1. **public/index.html** - Update the version indicator text AND all query parameters (`?v=...`) on:
    - `<link rel="manifest">`
    - `<link rel="stylesheet">`
-   - `<script src="db.js">`
-   - `<script src="app.js">`
-2. **manifest.json** - Update the `version` field
-3. **service-worker.js** - Update:
+   - `<script src="../src/client/db.js">`
+   - `<script src="../src/client/app.js">`
+2. **public/manifest.json** - Update the `version` field
+3. **public/service-worker.js** - Update:
    - `CACHE_NAME` constant
    - All URLs in `urlsToCache` array with new query parameters
 4. **README.md** - Update the version at the top
@@ -264,7 +281,7 @@ Version format: `1.0.YYYYMMDDHHMM` (timestamp of build)
 **Why query parameters?** They force browsers to fetch fresh files instead of using cached versions when you deploy updates.
 
 ### Changing Colors
-Edit CSS variables in `styles.css`:
+Edit CSS variables in `public/styles.css`:
 ```css
 :root {
     --cosmic-deep: #0a0e27;      /* Background color */
@@ -275,10 +292,10 @@ Edit CSS variables in `styles.css`:
 ```
 
 ### Modifying Chart Types
-Charts use Chart.js. Edit chart configurations in the `createCharts()` methods in `app.js`.
+Charts use Chart.js. Edit chart configurations in the `createCharts()` methods in `src/client/app.js`.
 
 ### Adjusting Sensitivity
-In `app.js`, modify these values:
+In `src/client/app.js`, modify these values:
 ```javascript
 // Minimum press duration to count (ms)
 if (duration < 100) return;  // Change 100 to your preference

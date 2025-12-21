@@ -1,11 +1,11 @@
 {
   "name": "meteor-counter",
-  "version": "1.0.202512201601",
+  "version": "1.0.202512201621",
   "description": "Meteor observation tracking PWA with remote sync",
   "scripts": {
-    "dev": "./start-dev.sh",
+    "dev": "./scripts/start-dev.sh",
     "auth": "netlify login",
-    "serve": "node server.js",
+    "serve": "node src/server/server.js",
     "build": "echo 'No build step needed for static site'",
     "deploy": "netlify deploy --prod",
     "migrate": "node-pg-migrate",
