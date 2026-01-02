@@ -802,16 +802,15 @@ class MeteorObserver {
         // Only create charts if there are observations
         if (this.observations.length > 0) {
             console.log('Creating charts for', this.observations.length, 'observations');
+            // Show chart cards
+            const chartCards = document.querySelectorAll('.charts-container .chart-card canvas');
+            chartCards.forEach(card => card.closest('.chart-card').style.display = 'block');
             this.createCharts();
         } else {
-            // Show message if no observations
-            console.log('No observations, showing empty message');
-            document.querySelector('.charts-container').innerHTML = `
-                <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">
-                    <p>No meteors recorded during this session.</p>
-                    <p style="margin-top: 10px; font-size: 0.9rem;">Try a longer observation period during peak meteor shower times!</p>
-                </div>
-            `;
+            // Hide chart cards when no observations
+            console.log('No observations, hiding chart cards');
+            const chartCards = document.querySelectorAll('.charts-container .chart-card canvas');
+            chartCards.forEach(card => card.closest('.chart-card').style.display = 'none');
         }
         
         console.log('Showing results screen');
