@@ -772,7 +772,7 @@ class MeteorObserver {
         } else {
             // Show regular summary in charts container for non-practice sessions
             document.getElementById('session-summary-content').innerHTML = `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-bottom: 15px;">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px;">
                     <div style="text-align: center;">
                         <div style="font-size: 2rem; font-family: 'Orbitron', sans-serif; color: var(--nebula-blue);">${this.observations.length}</div>
                         <div style="font-size: 0.9rem; color: rgba(255,255,255,0.6);">Total Meteors</div>
@@ -884,7 +884,7 @@ class MeteorObserver {
 
         // Display practice stats
         practiceStatsContent.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-bottom: 15px;">
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px;">
                 <div style="text-align: center;">
                     <div style="font-size: 2.5rem; font-family: 'Orbitron', sans-serif; color: ${color};">${avgOverallAccuracy.toFixed(1)}%</div>
                     <div style="font-size: 1.1rem; color: ${color}; font-weight: bold; margin-top: 5px;">${grade}</div>
@@ -907,16 +907,18 @@ class MeteorObserver {
                 <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-bottom: 10px;">
                     <strong>Individual Meteor Results:</strong>
                 </div>
-                <div style="display: grid; gap: 8px; max-height: 200px; overflow-y: auto;">
+                <div style="display: grid; gap: 6px; max-height: 200px; overflow-y: auto;">
                     ${practiceObservations.map((obs, idx) => {
                         const obsColor = obs.overallAccuracy >= 75 ? '#00ff88' : obs.overallAccuracy >= 60 ? '#ffd700' : obs.overallAccuracy >= 40 ? '#4da8ff' : '#ff6ec7';
                         return `
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 5px;">
-                                <span style="color: rgba(255,255,255,0.6); font-size: 0.85rem;">Meteor ${idx + 1}</span>
-                                <div style="display: flex; gap: 15px; font-size: 0.85rem;">
-                                    <span style="color: ${obsColor};">${obs.overallAccuracy.toFixed(1)}% overall</span>
-                                    <span style="color: rgba(255,255,255,0.5);">Duration: ${obs.durationAccuracy.toFixed(0)}%</span>
-                                    <span style="color: rgba(255,255,255,0.5);">Brightness: ${obs.intensityAccuracy.toFixed(0)}%</span>
+                            <div style="padding: 8px; background: rgba(255,255,255,0.03); border-radius: 5px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <span style="color: rgba(255,255,255,0.6); font-size: 0.85rem;">Meteor ${idx + 1}</span>
+                                    <span style="color: ${obsColor}; font-size: 0.85rem; font-weight: bold;">${obs.overallAccuracy.toFixed(1)}%</span>
+                                </div>
+                                <div style="display: flex; gap: 10px; font-size: 0.75rem; color: rgba(255,255,255,0.5);">
+                                    <span>Dur: ${obs.durationAccuracy.toFixed(0)}%</span>
+                                    <span>Bright: ${obs.intensityAccuracy.toFixed(0)}%</span>
                                 </div>
                             </div>
                         `;
@@ -1747,7 +1749,12 @@ class MeteorObserver {
         document.querySelectorAll('.screen').forEach(screen => {
             screen.classList.remove('active');
         });
-        document.getElementById(screenId).classList.add('active');
+        const activeScreen = document.getElementById(screenId);
+        activeScreen.classList.add('active');
+
+        // Reset scroll position to top
+        window.scrollTo(0, 0);
+        activeScreen.scrollTop = 0;
     }
 
     // ==================== Practice Mode Methods ====================

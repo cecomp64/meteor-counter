@@ -435,6 +435,16 @@ body {
     .chart-card {
         padding: 20px;
     }
+
+    .session-stats {
+        grid-template-columns: 1fr;
+    }
+
+    /* Make results stats single column on mobile */
+    #session-summary-content > div:first-child,
+    #practice-stats-content > div:first-child {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 /* Fullscreen for observing */
